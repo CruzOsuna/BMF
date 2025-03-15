@@ -1,0 +1,28 @@
+Uso de repositorios en GitHub
+
+
+- Agregar archivos nuevos o modificados:
+
+git add .
+
+
+
+- Hacer un commit con una descripccion:
+
+git commit -m "Descripccion de los cambios"
+
+
+
+- Subir los cambios a GitHub:
+git push origin main
+
+
+- Si trabajaste en una computadora y quieres actualizar la otra:
+
+git pull origin main
+
+
+- Configurar el dispositivo para utilizar autenticacion con SSH
+
+git remote set-url origin git@github.com:CruzOsuna/BMF.git
+
