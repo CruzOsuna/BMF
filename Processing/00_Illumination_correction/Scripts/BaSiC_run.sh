@@ -11,8 +11,8 @@ export _JAVA_OPTIONS="-Xms25g -Xmx25g" # RAM reduction to 25gb
 
 # Modification to use the SSD
 # Dentro de BaSiC_run.sh
-MY_PATH="/mnt/external/CycIF_human_2024/1_Registration/RCPNLS/Done/FAHNSCC_11C"
-OUTPUT_PATH="/mnt/external/CycIF_human_2024/1_Registration/00_Illumination_correction/output/FAHNSCC_11C"
+MY_PATH="/data/input/"                  # Directorio de entrada montado en el contenedor
+OUTPUT_PATH="/data/output"              # Directorio de salida montado en el contenedor
 FILE_TYPE="rcpnl"
 
 

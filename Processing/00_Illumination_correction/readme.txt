@@ -1,38 +1,78 @@
+## Instrucciones para corrección de iluminación usando Docker
 
+Este documento proporciona instrucciones detalladas para ejecutar la corrección de iluminación en diferentes dispositivos de almacenamiento utilizando Docker.
 
+---
 
+### 1. Corrección de iluminación en un dispositivo externo (Spatial SSD)
 
+Ejecuta el siguiente comando para iniciar un contenedor de Docker y montar las carpetas necesarias:
 
-# Run iluminattion correction on a external device
-
-
+```bash
 sudo docker run \
-  --privileged -it -m 120g --cpus=4 \
+  --privileged -it -m 120g --cpus=8 \
   --mount type=bind,source="/media/cruz-osuna/Spatial",target=/mnt/external \
-  --mount type=bind,source="$(pwd)",target=/data \
+  --mount type=bind,source="/media/cruz-osuna/Spatial/CycIF_mice_p53/1_Registration/RCPNLS/",target=/data/input \
+  --mount type=bind,source="/media/cruz-osuna/Spatial/CycIF_mice_p53/00_Illumination_correction/Output",target=/data/output \
+  --mount type=bind,source="$(pwd)",target=/scripts \
   mybasic-image bash
+```
 
+Luego, dentro del contenedor, sigue estos pasos:
 
-sudo chmod -R a+rw /media/cruz-osuna/Spatial  # Si hay errores de acceso
+```bash
+cd /scripts  # Acceder al directorio donde está el script
+chmod +x BaSiC_run.sh  # Dar permisos de ejecución si es necesario
+./BaSiC_run.sh  # Ejecutar el script
+```
 
+---
 
-cd /data
+### 2. Corrección de iluminación en un dispositivo externo (Mice HDD)
 
+Ejecuta el siguiente comando para iniciar el contenedor de Docker con las carpetas correspondientes:
 
-./BaSiC_run.sh
+```bash
+sudo docker run \
+  --privileged -it -m 120g --cpus=8 \
+  --mount type=bind,source="/media/cruz-osuna/Mice",target=/mnt/external \
+  --mount type=bind,source="/media/cruz-osuna/Mice/CycIF_mice_p53/1_Registration/RCPNLS/",target=/data/input \
+  --mount type=bind,source="/media/cruz-osuna/Mice/CycIF_mice_p53/00_Illumination_correction/Output",target=/data/output \
+  --mount type=bind,source="$(pwd)",target=/scripts \
+  mybasic-image bash
+```
 
+Dentro del contenedor, sigue estos pasos:
 
+```bash
+cd /scripts  # Acceder al directorio donde está el script
+chmod +x BaSiC_run.sh  # Dar permisos de ejecución si es necesario
+./BaSiC_run.sh  # Ejecutar el script
+```
 
+---
 
+### 3. Corrección de iluminación en almacenamiento interno
 
-# Run ilum,ination correction on a internal device
+1. Construye la imagen de Docker si no lo has hecho previamente:
 
-
+```bash
 sudo docker build -t mybasic-image .
+```
 
-sudo docker run --privileged -it -m 120g --cpus=4 --mount type=bind,source="$(pwd)",target=/data mybasic-image bash 
+2. Ejecuta el contenedor con el almacenamiento interno:
 
-cd /data
+```bash
+sudo docker run --privileged -it -m 120g --cpus=4 --mount type=bind,source="$(pwd)",target=/data mybasic-image bash
+```
 
-bash BaSic_run.sh # run bash script to process images 
+3. Dentro del contenedor, accede al directorio de trabajo y ejecuta el script:
+
+```bash
+cd /data  # Acceder al directorio donde está el script
+bash BaSiC_run.sh  # Ejecutar el script para procesar las imágenes
+```
+
+---
+
 
