@@ -1,20 +1,11 @@
 #!/bin/bash
 
-export _JAVA_OPTIONS="-Xms25g -Xmx25g" # RAM reduction to 25gb
-
+# export _JAVA_OPTIONS="-Xms25g -Xmx25g" # RAM reduction to 25gb
 
 # Define paths and file type
-#MY_PATH="/data/input"      # Name of path modified
-#OUTPUT_PATH="/data/output" # Name of path modified
-#FILE_TYPE="rcpnl"
-
-
-# Modification to use the SSD
-# Dentro de BaSiC_run.sh
-MY_PATH="/data/input/"                  # Directorio de entrada montado en el contenedor
-OUTPUT_PATH="/data/output"              # Directorio de salida montado en el contenedor
+MY_PATH="/data/input/"
+OUTPUT_PATH="/data/output"
 FILE_TYPE="rcpnl"
-
 
 # Function to execute the ImageJ command
 BaSiC_call() {
@@ -28,7 +19,7 @@ BaSiC_call() {
     eval "${cmd}"
 }
 
-# Function to get the list of files
+# Function to get the sorted list of files
 get_file_list() {
     local folder="$1"
     local files=""
@@ -36,26 +27,47 @@ get_file_list() {
     # Loop through the files and filter based on the file type
     for f in "$folder"/*; do
         if [[ "$f" == *$FILE_TYPE* ]]; then
-            files="$files $f"
+            files+=$'\n'"$f"
         fi
     done
-    echo "$files"
+    # Sort files numerically
+    echo "$files" | sort -V
 }
 
 # Main logic
 echo "Source folder: $MY_PATH"
 
-# Get the list of files
-illumination_to_correct=$(get_file_list "$MY_PATH")
-
-# Convert file list to an array
-file_list=($illumination_to_correct)
-
-# Iterate through each file and run the BaSiC_call function
-for file in "${file_list[@]}"; do
-    # Extract file name (basename)
-    file_name=$(basename "$file")
+# Process each immediate subdirectory under MY_PATH
+find "$MY_PATH" -mindepth 1 -maxdepth 1 -type d -print0 | sort -z | while IFS= read -r -d '' subdir; do
+    echo "Processing subdirectory: $subdir"
     
-    # Run the BaSiC_call function
-    BaSiC_call "$file" "$OUTPUT_PATH" "$file_name"
+    # Get the list of files in this subdir (sorted)
+    illumination_to_correct=$(get_file_list "$subdir")
+    file_list=()
+    while IFS= read -r line; do
+        [[ -n "$line" ]] && file_list+=("$line")
+    done <<< "$illumination_to_correct"
+
+    # Iterate through each file in the subdir
+    for file in "${file_list[@]}"; do
+        # Extract file name (basename)
+        file_name=$(basename "$file")
+        # Get subdirectory name
+        subdir_name=$(basename "$subdir")
+        # Create output subdirectory
+        output_subdir="${OUTPUT_PATH}/${subdir_name}"
+        mkdir -p "$output_subdir"
+
+        # Check if output files already exist
+        ffp_file="${output_subdir}/${file_name}-ffp.tif"
+        dfp_file="${output_subdir}/${file_name}-dfp.tif"
+        if [[ -f "$ffp_file" && -f "$dfp_file" ]]; then
+            echo "Skipping already processed file: $file_name"
+            continue
+        fi
+
+        # Process the file
+        echo "Processing file: $file_name"
+        BaSiC_call "$file" "$output_subdir" "$file_name"
+    done
 done
