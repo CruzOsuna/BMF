@@ -2,9 +2,9 @@
 FROM fiji/fiji:fiji-openjdk-8
 
 ENTRYPOINT []
-ENV JVM_OPTS="-Xms50g -Xmx50g"
-ENV _JAVA_OPTIONS="-Xms50g -Xmx50g"
-ENV JAVA_OPTS="-Xms50g -Xmx50g"
+ENV JVM_OPTS="-Xms4g -Xmx24g"
+ENV _JAVA_OPTIONS="-Xms4g -Xmx24g"
+ENV JAVA_OPTS="-Xms4g -Xmx24g"
 
 # Download and install the BaSiC plugin for Fiji
 RUN wget https://github.com/marrlab/BaSiC/raw/b6943502853c052fd93c6fabc807bc40907e73ce/BaSiCPlugin.zip && \

@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Script: final_progress_monitor.sh
-# Uso: ./final_progress_monitor.sh
+# Script: live_progress_monitor.sh
+# Uso: ./live_progress_monitor.sh
 
 # Configuración de estilo
 RED='\e[31m'
@@ -14,8 +14,8 @@ RESET='\e[0m'
 BOLD='\e[1m'
 
 # Configuración de rutas
-INPUT_HOST_DIR="/media/cruz-osuna/Mice/CycIF_mice_p53/1_Registration/RCPNLS"
-OUTPUT_HOST_DIR="/media/cruz-osuna/Mice/CycIF_mice_p53/00_Illumination_correction/Output"
+INPUT_HOST_DIR="/media/cruz/Mice/CycIF_mice_p53/1_Registration/RCPNLS"
+OUTPUT_HOST_DIR="/media/cruz/Mice/CycIF_mice_p53/00_Illumination_correction/Output"
 FILE_TYPE="rcpnl"
 
 # Variables de estado
