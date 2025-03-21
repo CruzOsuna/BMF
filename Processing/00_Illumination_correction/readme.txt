@@ -84,12 +84,12 @@ chmod +x BaSiC_run.sh  # Dar permisos de ejecución si es necesario
 Aorus-Cruz
 
 ```bash
-docker run \
+sudo docker run \
   -it -m 30g --cpus=20 \
   -u $(id -u):$(id -g) \
   --mount type=bind,source="/media/cruz/Mice",target=/mnt/external \
-  --mount type=bind,source="/media/cruz/Mice/CycIF_mice_p53/1_Registration/RCPNLS/",target=/data/input \
-  --mount type=bind,source="/media/cruz/Mice/CycIF_mice_p53/00_Illumination_correction/Output",target=/data/output \
+  --mount type=bind,source="/media/cruz/Mice/CycIF_mice_4NQO/1_Stitching/Unstitched_images",target=/data/input \
+  --mount type=bind,source="/media/cruz/Mice/CycIF_mice_4NQO/0_Iluminattion_Correction/output",target=/data/output \
   --mount type=bind,source="$(pwd)",target=/scripts \
   mybasic-image /scripts/BaSiC_run.sh
 ```
