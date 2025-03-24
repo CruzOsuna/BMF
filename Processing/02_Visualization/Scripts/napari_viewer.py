@@ -26,21 +26,21 @@ from PyQt5.QtCore import QSettings, Qt
 import sys
 from dask_image.imread import imread as daskread
 
-# Configuración inicial
+# Initial configuration
 class SettingsDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("Selección de Widgets")
+        self.setWindowTitle("Widget Selection")
         self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
         
         self.widget_list = [
-            "Abrir imagen", "Abrir máscara", "Cargar formas",
-            "Límites de contraste", "Guardar formas", "Recortar ROI",
-            "Contar células", "Exportar células", "Metadatos",
-            "Vorónoi", "Cerrar todo"
+            "Open image", "Open mask", "Load shapes",
+            "Contrast limits", "Save shapes", "Crop ROI",
+            "Count cells", "Export cells", "Metadata",
+            "Voronoi", "Close all"
         ]
         
-        self.settings = QSettings("MiLab", "NapariTools")
+        self.settings = QSettings("MyLab", "NapariTools")
         
         layout = QVBoxLayout()
         self.checkboxes = {}
@@ -71,10 +71,8 @@ if not dialog.exec_():
 viewer = napari.Viewer()
 
 # -------------------------------------------------------------------------------
-# Implementación de widgets
+# Widget implementations
 # -------------------------------------------------------------------------------
-
-
 
 @magicgui(
     call_button='Open image',
@@ -98,16 +96,16 @@ viewer = napari.Viewer()
     }
 )
 def open_large_image(image_path: Path = Path("."), 
-                    contrast_limit_txt: Path = None,  # Cambiado a None por defecto
+                    contrast_limit_txt: Path = None,
                     ab_list_path: Path = None):
     """Open a multichannel image with optional parameters"""
     try:
-        # Validar imagen principal
+        # Validate main image
         if not image_path.is_file():
             show_info("Please select a valid image file")
             return
 
-        # Manejar nombres de canales
+        # Handle channel names
         channel_names = []
         if ab_list_path and ab_list_path.is_file():
             try:
@@ -117,7 +115,7 @@ def open_large_image(image_path: Path = Path("."),
                 show_info(f"Error reading channel names: {str(e)}")
                 return
 
-        # Manejar límites de contraste
+        # Handle contrast limits
         contrast_limits = None
         if contrast_limit_txt and contrast_limit_txt.is_file():
             try:
@@ -127,12 +125,12 @@ def open_large_image(image_path: Path = Path("."),
                 show_info(f"Error reading contrast limits: {str(e)}")
                 return
 
-        # Cargar imagen
+        # Load image
         with tiff.TiffFile(image_path) as tf:
             is_pyramidal = len(tf.series[0].levels) > 1
             num_channels = tf.series[0].shape[0]
             
-            # Generar nombres de canales automáticos si es necesario
+            # Generate automatic channel names if needed
             if not channel_names:
                 channel_names = [f"Channel_{i+1}" for i in range(num_channels)]
             
@@ -141,7 +139,7 @@ def open_large_image(image_path: Path = Path("."),
                 for i in range(len(tf.series[0].levels))
             ] if is_pyramidal else [da.from_zarr(zarr.open(tf.aszarr()))]
 
-        # Añadir al viewer
+        # Add to viewer
         viewer.add_image(
             pyramid,
             channel_axis=0,
@@ -151,11 +149,10 @@ def open_large_image(image_path: Path = Path("."),
             multiscale=is_pyramidal
         )
 
-        show_info(f"Imagen cargada: {image_path.name}\nCanales: {len(channel_names)}")
+        show_info(f"Image loaded: {image_path.name}\nChannels: {len(channel_names)}")
 
     except Exception as e:
-        show_info(f"Error crítico: {str(e)}")
-
+        show_info(f"Critical error: {str(e)}")
 
 @magicgui(call_button='Open mask', layout='vertical')
 def open_mask(mask_path=Path()):
@@ -166,13 +163,16 @@ def open_mask(mask_path=Path()):
 
 @magicgui(call_button='Load Shapes', layout='vertical', shapes_path={"mode": "d"})
 def load_shapes(shapes_path: Path):
-    shapes_path = str(shapes_path) + "/"
-    shapes_list = os.listdir(shapes_path)
+    shapes_path = Path(shapes_path)
+    if not shapes_path.is_dir():
+        show_info("Please select a valid directory")
+        return
+        
     names = []
-    for filename in shapes_list:
-        name = filename.replace(".txt", "")
+    for filename in shapes_path.glob("*.txt"):
+        name = filename.stem
         names.append(name)
-        with open(shapes_path + filename, 'r') as f:
+        with open(filename, 'r') as f:
             shapes_str = f.read()
         shapes_str = shapes_str.replace('\n', '').replace('      ', '').replace('array(', '').replace(')', '')
         shapes = ast.literal_eval(shapes_str)
@@ -188,22 +188,22 @@ def save_contrast_limits(output_file: Path, ab_list_path=Path(), name=""):
     for antibody in ab:
         contrast_limit.append(viewer.layers[antibody].contrast_limits)
 
-    with open(str(output_file) + "/" + name + ".txt", "w") as output:
+    with open(output_file / f"{name}.txt", "w") as output:
         output.write(str(contrast_limit))
 
 @magicgui(call_button='Save shape array', layout='vertical', output_file={"mode": "d"})
 def save_shapes(output_file: Path, shape_name=""):
     shapes = viewer.layers[shape_name].data
-    with open(str(output_file) + "/" + shape_name + ".txt", 'w') as output:
+    with open(output_file / f"{shape_name}.txt", 'w') as output:
         output.write(str(shapes))
 
 @magicgui(call_button='Cut and Save ROIs', filepath={"mode": "d"})
 def cut_mask(filepath: Path, shape_name=""):
     if 'MASK' not in viewer.layers:
-        show_info('No mask layer named "MASK" was found.')
+        show_info('No mask layer named "MASK" found')
         return
     if shape_name not in viewer.layers:
-        show_info(f'No shape layer named "{shape_name}" was found.')
+        show_info(f'No shape layer named "{shape_name}" found')
         return
 
     mask_to_cut = viewer.layers['MASK'].data
@@ -217,7 +217,7 @@ def cut_mask(filepath: Path, shape_name=""):
                 removable_cells.append(cell)
     df = pd.DataFrame({'cellid': removable_cells})
     df = df.astype(int)
-    df.to_csv(str(filepath) + '/' + shape_name + '_selected_cell_ids.csv', index=False)
+    df.to_csv(filepath / f'{shape_name}_selected_cell_ids.csv', index=False)
 
 @magicgui(call_button='Close all', layout='vertical')
 def close_all():
@@ -242,10 +242,10 @@ def view_metadata(adata_path=Path(), image_name="", metadata_column=""):
 @magicgui(call_button='Count selected cells', layout='vertical')
 def count_selected_cells(shape_name: str = "", cell_info_csv: Path = Path()):
     if 'MASK' not in viewer.layers:
-        show_info('No mask layer named "MASK" was found.')
+        show_info('No mask layer named "MASK" found')
         return
     if shape_name not in viewer.layers:
-        show_info(f'No shape layer named "{shape_name}" was found.')
+        show_info(f'No shape layer named "{shape_name}" found')
         return
 
     mask_layer = viewer.layers['MASK']
@@ -263,10 +263,10 @@ def count_selected_cells(shape_name: str = "", cell_info_csv: Path = Path()):
 @magicgui(call_button='Save cells in selected ROI', layout='vertical', output_csv={"mode": "d"})
 def save_selected_cells(output_csv: Path, shape_name: str = "", cell_info_csv: Path = Path(), output_file_name: str = ""):
     if 'MASK' not in viewer.layers:
-        show_info('No mask layer named "MASK" was found.')
+        show_info('No mask layer named "MASK" found')
         return
     if shape_name not in viewer.layers:
-        show_info(f'No shape layer named "{shape_name}" was found.')
+        show_info(f'No shape layer named "{shape_name}" found')
         return
 
     mask_layer = viewer.layers['MASK']
@@ -284,7 +284,7 @@ def save_selected_cells(output_csv: Path, shape_name: str = "", cell_info_csv: P
     try:
         cell_info_df = pd.read_csv(cell_info_csv)
     except Exception as e:
-        show_info(f'Error reading the cell information file: {e}')
+        show_info(f'Error reading cell information file: {e}')
         return
 
     cell_id_column = None
@@ -293,16 +293,16 @@ def save_selected_cells(output_csv: Path, shape_name: str = "", cell_info_csv: P
             cell_id_column = col
             break
     if cell_id_column is None:
-        show_info('No cell ID column was found in the cell information file.')
+        show_info('No cell ID column found in cell information file')
         return
 
     selected_cells_info = cell_info_df[cell_info_df[cell_id_column].isin(unique_cells)]
 
     try:
-        selected_cells_info.to_csv(str(output_csv) + "/" + output_file_name + ".csv", index=False)
+        selected_cells_info.to_csv(output_csv / f"{output_file_name}.csv", index=False)
         show_info(f'Information on {cell_count} selected cells saved in {output_csv}')
     except Exception as e:
-        show_info(f'Error saving the selected cells file: {e}')
+        show_info(f'Error saving selected cells file: {e}')
 
 @magicgui(call_button='Voronoi plot', layout='vertical', output_dir={"mode": "d"})
 def voronoi_plot(output_dir: Path, adata_path=Path(), shape_name="", image_name="", cluster_name="", file_name=""):
@@ -324,36 +324,36 @@ def voronoi_plot(output_dir: Path, adata_path=Path(), shape_name="", image_name=
                   subset=image_name, x_lim=[x_1, x_2], y_lim=[y_1, y_2], plot_legend=True, flip_y=True,
                   overlay_points=cluster_name, voronoi_alpha=0.7, voronoi_line_width=0.3, overlay_point_size=8,
                   overlay_point_alpha=1, legend_size=15, overlay_points_colors=n_colors, colors=n_colors,
-                  fileName=file_name + ".pdf", saveDir=str(output_dir) + "/")
+                  fileName=f"{file_name}.pdf", saveDir=str(output_dir))
 
 # -------------------------------------------------------------------------------
-# Configuración final
+# Final configuration
 # -------------------------------------------------------------------------------
 
-# 1. Definir mapeo de widgets
+# 1. Define widget mapping
 widget_map = {
-    "Abrir imagen": open_large_image,
-    "Abrir máscara": open_mask,
-    "Cargar formas": load_shapes,
-    "Límites de contraste": save_contrast_limits,
-    "Guardar formas": save_shapes,
-    "Recortar ROI": cut_mask,
-    "Contar células": count_selected_cells,
-    "Exportar células": save_selected_cells,
-    "Metadatos": view_metadata,
-    "Vorónoi": voronoi_plot,
-    "Cerrar todo": close_all
+    "Open image": open_large_image,
+    "Open mask": open_mask,
+    "Load shapes": load_shapes,
+    "Contrast limits": save_contrast_limits,
+    "Save shapes": save_shapes,
+    "Crop ROI": cut_mask,
+    "Count cells": count_selected_cells,
+    "Export cells": save_selected_cells,
+    "Metadata": view_metadata,
+    "Voronoi": voronoi_plot,
+    "Close all": close_all
 }
 
-# 2. Definir configuración de pestañas
+# 2. Define tab configuration
 tab_config = {
-    "Entrada": ["Abrir imagen", "Abrir máscara", "Cargar formas"],
-    "Análisis": ["Contar células", "Metadatos", "Vorónoi"],
-    "Exportar": ["Límites de contraste", "Guardar formas", "Recortar ROI", "Exportar células"],
-    "Herramientas": ["Cerrar todo"]
+    "Input": ["Open image", "Open mask", "Load shapes"],
+    "Analysis": ["Count cells", "Metadata", "Voronoi"],
+    "Export": ["Contrast limits", "Save shapes", "Crop ROI", "Export cells"],
+    "Tools": ["Close all"]
 }
 
-# 3. Añadir widgets al viewer
+# 3. Add widgets to viewer
 for tab_name, widgets in tab_config.items():
     tab_widgets = []
     for w in widgets:
@@ -369,7 +369,7 @@ for tab_name, widgets in tab_config.items():
                 allowed_areas=['right', 'left']
             )
 
-@magicgui(call_button='⚙️ Configurar Widgets')
+@magicgui(call_button='⚙️ Configure Widgets')
 def config_widgets():
     dialog = SettingsDialog()
     if dialog.exec_():
