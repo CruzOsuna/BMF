@@ -13,7 +13,7 @@ conda env create -f stardist_env.yml
 
 
 
-### Installation using a `.sh` script
+### Installation using a `.sh` script (for linux)
 
 1. Grant execution permissions to the script:
 
