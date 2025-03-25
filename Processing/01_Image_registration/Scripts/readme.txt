@@ -16,6 +16,6 @@ conda activate image_registration
 
 # Add your paths to python stitching.py
 
-python stitching.py -c n #Where n is the number of threads that we want to use
+python stitching.py -c n  # Where "n" is the number of threads that we want to use
 
 
