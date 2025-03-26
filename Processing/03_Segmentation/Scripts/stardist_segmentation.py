@@ -2,7 +2,7 @@ import math
 import tifffile
 import os
 import math
-import time  # Import the time module
+import time
 from stardist.data import test_image_nuclei_2d
 from stardist.plot import render_label
 from csbdeep.utils import normalize
@@ -11,8 +11,8 @@ from stardist.models import StarDist2D
 
 # input path must only have the images to segment
 # output path should be an empty folder
-INPUT_PATH = "/home/cruz/Escritorio/03_Segmentation/image"
-OUTPUT_PATH = "/home/cruz/Escritorio/03_Segmentation/masks/" # remember to add / in the end
+INPUT_PATH = "/media/cruz/Mice/CycIF_mice_4NQO/2_Visualization/t-CycIF/images_illumination-corrected"
+OUTPUT_PATH = "/media/cruz/Mice/CycIF_mice_4NQO/3_Segmentation/Mask_Illumination-corrected/" # remember to add / in the end
 # x = 8 # x number of tiles
 # y = 8 # y number of tiles
 arr = os.listdir(INPUT_PATH)
@@ -26,9 +26,8 @@ if __name__ == '__main__':
 
     while True:
         a = input("Do you want to proceed? [y/n]")
-        if a=="y":
+        if a == "y":
             for image in arr:
-
                 image_name = image
                 sep = '.'
                 imageid = image_name.split(sep, 1)[0]
@@ -45,11 +44,11 @@ if __name__ == '__main__':
                 labels, _ = model.predict_instances(normalize(img), n_tiles=(tiles, tiles))
                 labels = labels.astype("int32")
                 output_name = OUTPUT_PATH + imageid + ".ome.tif"
-                tifffile.imwrite(output_name, labels)  # Correction of Function: Replace tifffile.imsave() with tifffile.imwrite(), which is the updated method for saving images in tifffile.
+                tifffile.imwrite(output_name, labels)
                 print("Finish image {}".format(IMAGE_PATH))
+            break  # Exit loop after processing all images
 
-            continue
-        elif a=="n":
+        elif a == "n":
             break
         else:
             print("Enter either [y/n]")
