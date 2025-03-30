@@ -1,0 +1,84 @@
+# Internal file for the execution of the illumination correction scripts for the diferent datasets
+
+
+Name structure: 
+Dataset Storage_device Computer
+
+
+
+
+Human-2024 Spatial Aourus
+
+sudo docker run \
+  --privileged -it -m 32g --cpus=14 \
+  -u $(id -u):$(id -g) \
+  --mount type=bind,source="/media/cruz/Spatial",target=/mnt/external \
+  --mount type=bind,source="/media/cruz/Spatial/CycIF_human_2024/1_Registration/RCPNLS/Done/",target=/data/input \
+  --mount type=bind,source="/media/cruz/Spatial/CycIF_human_2024/0_Illumination_correction/output",target=/data/output \
+  --mount type=bind,source="$(pwd)",target=/scripts \
+  mybasic-image /scripts/BaSiC_run.sh
+
+
+Human-2025 Spatial Aourus
+
+sudo docker run \
+  --privileged -it -m 32g --cpus=14 \
+  -u $(id -u):$(id -g) \
+  --mount type=bind,source="/media/cruz/Spatial",target=/mnt/external \
+  --mount type=bind,source="/media/cruz/Spatial/CycIF_human_2025/1_Registration/RCPNLS/Done/",target=/data/input \
+  --mount type=bind,source="/media/cruz/Spatial/CycIF_human_2025/0_Illumination_correction/output",target=/data/output \
+  --mount type=bind,source="$(pwd)",target=/scripts \
+  mybasic-image /scripts/BaSiC_run.sh
+
+
+
+
+  Mice-P53 Mice Aourus
+
+sudo docker run \
+  --privileged -it -m 32g --cpus=8 \
+  -u $(id -u):$(id -g) \
+  --mount type=bind,source="/media/cruz/Mice",target=/mnt/external \
+  --mount type=bind,source="/media/cruz/Mice/CycIF_mice_p53/1_Registration/RCPNLS/",target=/data/input \
+  --mount type=bind,source="/media/cruz/Mice/CycIF_mice_p53/00_Illumination_correction/Output",target=/data/output \
+  --mount type=bind,source="$(pwd)",target=/scripts \
+  mybasic-image /scripts/BaSiC_run.sh
+
+
+  Mice-P53 Mice Nitro5
+
+sudo docker run \
+  --privileged -it -m 32g --cpus=8 \
+  -u $(id -u):$(id -g) \
+  --mount type=bind,source="/media/cruz-osuna/Mice",target=/mnt/external \
+  --mount type=bind,source="/media/cruz-osuna/Mice/CycIF_mice_p53/1_Registration/RCPNLS/",target=/data/input \
+  --mount type=bind,source="/media/cruz-osuna/Mice/CycIF_mice_p53/00_Illumination_correction/Output",target=/data/output \
+  --mount type=bind,source="$(pwd)",target=/scripts \
+  mybasic-image /scripts/BaSiC_run.sh
+
+
+
+
+
+  Mice-4NQO Mice Aourus
+
+  sudo docker run \
+  --privileged -it -m 32g --cpus=8 \
+  -u $(id -u):$(id -g) \
+  --mount type=bind,source="/media/cruz/Mice",target=/mnt/external \
+  --mount type=bind,source="/media/cruz/Mice/CycIF_mice_4NQO/1_Registration/RCPNLS/",target=/data/input \
+  --mount type=bind,source="/media/cruz/Mice/CycIF_mice_4NQO/00_Illumination_correction/Output",target=/data/output \
+  --mount type=bind,source="$(pwd)",target=/scripts \
+  mybasic-image /scripts/BaSiC_run.sh
+
+
+  Mice-4NQO Mice Nitro5
+
+  sudo docker run \
+  --privileged -it -m 32g --cpus=8 \
+  -u $(id -u):$(id -g) \
+  --mount type=bind,source="/media/cruz-osuna/Mice",target=/mnt/external \
+  --mount type=bind,source="/media/cruz-osuna/Mice/CycIF_mice_4NQO/1_Registration/RCPNLS/",target=/data/input \
+  --mount type=bind,source="/media/cruz-osuna/Mice/CycIF_mice_4NQO/00_Illumination_correction/Output",target=/data/output \
+  --mount type=bind,source="$(pwd)",target=/scripts \
+  mybasic-image /scripts/BaSiC_run.sh

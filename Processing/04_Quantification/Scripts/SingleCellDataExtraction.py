@@ -240,7 +240,7 @@ def ExtractSingleCells(masks,image,channel_names,output, mask_props=None, intens
     for m in masks:
         m_full_name = os.path.basename(m)
         m_name = m_full_name.split('.')[0]
-        masks_loaded.update({str(m_name):skimage.io.imread(m,plugin='tifffile')})
+        masks_loaded.update({str(m_name): tifffile.imread(m)})
 
     scdata_z = MaskZstack(masks_loaded,image,channel_names_loaded_checked, mask_props=mask_props, intensity_props=intensity_props)
     #Write the singe cell data to a csv file using the image name

@@ -1,64 +1,66 @@
-# Instructions for Using the Segmentation Script
-# Modified from Färkkilä Lab
-# https://github.com/farkkilab/image_processing/blob/main/pipeline/2_segmentation/stardist_segmentation.py
-# Author: Cruz Osuna
+## Instructions for Using the Segmentation Script
 
-## Setup the Segmentation Environment
+### Source and Author Information
+- **Modified from:** [Färkkilä Lab](https://github.com/farkkilab/image_processing/blob/main/pipeline/2_segmentation/stardist_segmentation.py)
+- **Author:** Cruz Osuna
 
-### Installation using a Conda `.yml` file
+---
 
+## Setting Up the Segmentation Environment
+
+### 1. Installation Using a Conda `.yml` File
 To create the environment from the `.yml` file, run:
-
+```bash
 conda env create -f stardist_env.yml
+```
 
-
-
-### Installation using a `.sh` script (for linux)
-
-1. Grant execution permissions to the script:
-
+### 2. Installation Using a Shell Script (Linux)
+#### Step 1: Grant Execution Permissions
+```bash
 chmod +x install_stardist.sh
-
-
-2. Run the installation script:
-
+```
+#### Step 2: Run the Installation Script
+```bash
 ./install_stardist.sh
+```
 
+### 3. Manual Installation
+#### Step 1: Create and Activate the Conda Environment
+```bash
+conda create -n stardist python=3.10
+conda activate stardist
+```
 
-
-### Manual Installation
-
-1. Create and activate the Conda environment:
-
-conda create -n stardist python=3.10 conda activate stardist
-
-
-2. Install TensorFlow (this will automatically install a compatible NumPy version):
-
+#### Step 2: Install TensorFlow (Automatically Installs a Compatible NumPy Version)
+```bash
 conda install -c conda-forge tensorflow=2.18.0
+```
 
-
-3. Install StarDist and its dependencies:
-
+#### Step 3: Install StarDist and Dependencies
+```bash
 conda install -c conda-forge stardist
+```
 
-
-4. Verify the installed NumPy version:
-
-conda list | grep numpy # Should display numpy ~1.26.0
-
-
+#### Step 4: Verify the Installed NumPy Version
+```bash
+conda list | grep numpy  # Should display numpy ~1.26.0
+```
 
 ---
 
 ## Running the Segmentation Script
 
-1. Ensure the Conda environment is activated:
-
+### Step 1: Ensure the Conda Environment Is Activated
+```bash
 conda activate stardist
+```
 
-
-
-2. Execute the segmentation script:
-
+### Step 2: Execute the Segmentation Script
+```bash
 python stardist_segmentation.py
+```
+
+---
+
+Follow these steps to properly set up and execute the segmentation script. Modify paths and package versions as needed for your specific setup.
+

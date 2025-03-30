@@ -1,9 +1,8 @@
 #!/bin/bash
 
 # Script: live_progress_monitor.sh
-# Uso: ./live_progress_monitor.sh
 
-# Configuración de estilo
+# Color Configurations
 RED='\e[31m'
 GREEN='\e[32m'
 YELLOW='\e[33m'
@@ -13,19 +12,23 @@ CYAN='\e[36m'
 RESET='\e[0m'
 BOLD='\e[1m'
 
-# Configuración de rutas
-INPUT_HOST_DIR="/media/cruz/Mice/CycIF_mice_p53/1_Registration/RCPNLS"
-OUTPUT_HOST_DIR="/media/cruz/Mice/CycIF_mice_p53/00_Illumination_correction/Output"
+# Spinner characters
+SPINNER=('|' '/' '-' '\\')
+
+# Paths
+INPUT_HOST_DIR="/media/cruz/Spatial/CycIF_human_2024/1_Registration/RCPNLS/Done"
+OUTPUT_HOST_DIR="/media/cruz/Spatial/CycIF_human_2024/0_Illumination_correction/output"
 FILE_TYPE="rcpnl"
 
-# Variables de estado
+# State Variables
 declare -a SPEED_HISTORY
 START_TIME=$(date +%s)
 LAST_UPDATE=$START_TIME
 INITIAL_COUNT=0
+SPINNER_INDEX=0
 
-# Función para dibujar la interfaz
-draw_enhanced_progress() {
+# Function to Draw Progress
+draw_progress() {
     local current=$1
     local total=$2
     local elapsed=$3
@@ -33,54 +36,64 @@ draw_enhanced_progress() {
     local remaining=$5
     
     local cols=$(tput cols)
-    local bar_width=$((cols - 38))
+    local bar_width=$((cols - 45))  # Adjusted for new layout
     local percent=$((current * 100 / total))
     local filled=$((current * bar_width / total))
     local empty=$((bar_width - filled))
     
-    # Barra de progreso con degradado
-    printf "\r${BOLD}${CYAN}Progress: ${RESET}["
-    for i in $(seq 1 $filled); do
-        [ $i -le $((bar_width / 3)) ] && printf "${RED}◼"
-        [ $i -gt $((bar_width / 3)) ] && [ $i -le $((2 * bar_width / 3)) ] && printf "${YELLOW}◼"
-        [ $i -gt $((2 * bar_width / 3)) ] && printf "${GREEN}◼"
+    # Progress Bar
+    printf "\r${BOLD}${CYAN}["
+    for ((i=0; i<filled; i++)); do
+        if [ $i -lt $((bar_width / 3)) ]; then printf "${RED}█"; 
+        elif [ $i -lt $((2 * bar_width / 3)) ]; then printf "${YELLOW}█"; 
+        else printf "${GREEN}█"; fi
     done
     printf "${RESET}%${empty}s" | tr ' ' '.'
     printf "]"
 
-    # Estadísticas
+    # Progress Stats
     printf " ${BOLD}${MAGENTA}%3d%%${RESET}" "$percent"
     printf " ${GREEN}%d/${total}${RESET}" "$current"
-    printf "\n${BOLD}${CYAN}Stats:${RESET}"
-    printf " ${BLUE}⏱ %s${RESET}" "$(date -u -d @$elapsed +%H:%M:%S)"
-    printf " ${GREEN}▲ %d files/min${RESET}" "$speed"
-    [ $speed -gt 0 ] && printf " ${RED}⏳ %s remaining${RESET}" "$(date -u -d @$remaining +%H:%M:%S)"
     
+    # Spinner Animation
+    printf " ${CYAN}${SPINNER[$SPINNER_INDEX]}${RESET}"
+    SPINNER_INDEX=$(( (SPINNER_INDEX + 1) % 4 ))
+
+    printf "\n${BOLD}${CYAN}Time Elapsed:${RESET} ${BLUE}$(date -u -d @$elapsed +%H:%M:%S)${RESET}"
+    printf " ${GREEN}Speed: %d files/min${RESET}" "$speed"
+    if [ $speed -gt 0 ]; then
+        if [ $remaining -gt 86400 ]; then
+            printf " ${RED}ETA: Calculating...${RESET}"
+        else
+            printf " ${RED}ETA: %s${RESET}" "$(date -u -d @$remaining +%H:%M:%S)"
+        fi
+    fi
+
     tput cuu1
 }
 
-# Función para cálculo de velocidad
+# Speed Calculation (Using Exponential Moving Average)
 calculate_speed() {
     local current=$1
     local last=$2
     local delta_time=$3
-    
-    [ $delta_time -eq 0 ] && delta_time=1  # Evitar división por cero
+
+    [ $delta_time -eq 0 ] && delta_time=1  # Avoid division by zero
     local instant_speed=$(( (current - last) * 60 / delta_time ))
-    
-    # Promedio móvil de últimos 3 intervalos
-    SPEED_HISTORY+=($instant_speed)
-    [ ${#SPEED_HISTORY[@]} -gt 3 ] && SPEED_HISTORY=("${SPEED_HISTORY[@]:1}")
-    
-    local total=0
-    for s in "${SPEED_HISTORY[@]}"; do
-        total=$((total + s))
-    done
-    
-    [ ${#SPEED_HISTORY[@]} -eq 0 ] && echo 0 || echo $(( total / ${#SPEED_HISTORY[@]} ))
+
+    # Exponential Moving Average (EMA) for smoother speed estimation
+    local alpha=0.3
+    if [ ${#SPEED_HISTORY[@]} -eq 0 ]; then
+        SPEED_HISTORY=($instant_speed)
+    else
+        local last_speed=${SPEED_HISTORY[-1]}
+        SPEED_HISTORY+=($(awk "BEGIN {print int(($alpha * $instant_speed) + ((1 - $alpha) * $last_speed))}"))
+    fi
+
+    echo ${SPEED_HISTORY[-1]}
 }
 
-# Función para obtener progreso
+# Get Progress Function
 get_progress() {
     local total_input=$(find "$INPUT_HOST_DIR" -type f -name "*.$FILE_TYPE" | wc -l)
     local completed_pairs=$(find "$OUTPUT_HOST_DIR" -type f \( -name "*-ffp.tif" -o -name "*-dfp.tif" \) -exec basename {} \; | 
@@ -92,7 +105,7 @@ get_progress() {
 echo -e "${BOLD}${CYAN}=== Illumination Correction Progress Monitor ===${RESET}"
 echo -e "${BLUE}Input: ${YELLOW}$INPUT_HOST_DIR${RESET}"
 echo -e "${BLUE}Output: ${YELLOW}$OUTPUT_HOST_DIR${RESET}"
-echo -e "${BOLD}${RED}Presione Ctrl+C para salir${RESET}\n"
+echo -e "${BOLD}${RED}Press Ctrl+C to exit${RESET}\n"
 
 read INITIAL TOTAL < <(get_progress)
 LAST_COUNT=$INITIAL
@@ -103,29 +116,29 @@ while true; do
     ELAPSED=$((CURRENT_TIME - START_TIME))
     DELTA_TIME=$((CURRENT_TIME - LAST_UPDATE))
     DELTA_COUNT=$((CURRENT - LAST_COUNT))
-    
-    # Cálculo de velocidad y tiempo restante
+
+    # Speed Calculation
     if [ $DELTA_COUNT -gt 0 ]; then
         SPEED=$(calculate_speed $CURRENT $LAST_COUNT $DELTA_TIME)
-        REMAINING=$(( (TOTAL - CURRENT) * 60 / ($SPEED + 1) ))  # +1 para evitar división por cero
+        REMAINING=$(( (TOTAL - CURRENT) * 60 / ($SPEED + 1) ))  # +1 to prevent division by zero
     else
         SPEED=0
         REMAINING=0
     fi
-    
-    # Actualizar pantalla cada 5s o con cambios
+
+    # Update Every 5s or if Changes Detected
     if [ $DELTA_COUNT -gt 0 ] || [ $((CURRENT_TIME - LAST_UPDATE)) -ge 5 ]; then
-        draw_enhanced_progress "$CURRENT" "$TOTAL" "$ELAPSED" "$SPEED" "$REMAINING"
+        draw_progress "$CURRENT" "$TOTAL" "$ELAPSED" "$SPEED" "$REMAINING"
         LAST_UPDATE=$CURRENT_TIME
         LAST_COUNT=$CURRENT
     fi
-    
-    # Verificar finalización
+
+    # Check Completion
     if [ $CURRENT -ge $TOTAL ] && [ $TOTAL -gt 0 ]; then
-        echo -e "\n\n${BOLD}${GREEN}✔ Proceso completado!${RESET}"
-        echo -e "${BOLD}Tiempo total: ${YELLOW}$(date -u -d @$ELAPSED +%H:%M:%S)${RESET}"
+        echo -e "\n\n${BOLD}${GREEN}✔ Process Completed!${RESET}"
+        echo -e "${BOLD}Total Time: ${YELLOW}$(date -u -d @$ELAPSED +%H:%M:%S)${RESET}"
         exit 0
     fi
-    
+
     sleep 1
 done

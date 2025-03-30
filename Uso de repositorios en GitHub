@@ -9,7 +9,7 @@ git add .
 
 - Hacer un commit con una descripccion:
 
-git commit -m "Descripccion de los cambios"
+git commit -m "Improvements and corrections"
 
 
 
