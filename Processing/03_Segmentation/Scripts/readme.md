@@ -1,8 +1,8 @@
-## Instructions for Using the Segmentation Script
+## Stardist Segmentation Script - Installation and Usage
 
 ### Source and Author Information
 - **Modified from:** [Färkkilä Lab](https://github.com/farkkilab/image_processing/blob/main/pipeline/2_segmentation/stardist_segmentation.py)
-- **Author:** Cruz Osuna
+- **Author:** Cruz Francisco Osuna Aguirre (cruzosuna2003@gmail.com)
 
 ---
 
