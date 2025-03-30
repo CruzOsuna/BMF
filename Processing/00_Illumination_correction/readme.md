@@ -1,9 +1,9 @@
 ## Illumination Correction Using Docker - Installation and Usage
 
-### Script Information
-These scripts are a modified version of the code from the following repository:  
-[https://github.com/farkkilab/image_processing/tree/main/pipeline/0_illumination_correction](https://github.com/farkkilab/image_processing/tree/main/pipeline/0_illumination_correction)  
-**Author:** Cruz Francisco Osuna Aguirre (cruzosuna2003@gmail.com)
+
+### Source and Author Information
+- **Modified from:** [Färkkilä Lab - Image processing pipeline](https://github.com/farkkilab/image_processing/tree/main/pipeline/0_illumination_correction)
+- **Author:** Cruz Francisco Osuna Aguirre (cruzosuna2003@gmail.com)
 
 ---
 

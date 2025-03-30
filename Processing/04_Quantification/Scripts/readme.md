@@ -1,9 +1,13 @@
 # Quantification Scripts - Installation and Usage
 
 ## Overview
-The quantification scripts are designed to process image data from the CycIF platform. This version is adapted from the Laboratory of Systems Pharmacology (LSP) repository: [LSP GitHub](https://github.com/labsyspharm).
+The quantification scripts are designed to process image data from the CycIF platform. This version is adapted from the Laboratory of Systems Pharmacology (LSP) repository.
 
-**Author:** Cruz Osuna (cruzosuna2003@gmail.com)
+### Source and Author Information
+- **Modified from:** [labsyspharm](https://github.com/labsyspharm)
+- **Author:** Cruz Francisco Osuna Aguirre (cruzosuna2003@gmail.com)
+
+Pending improvement of the source code reference for this section :) 
 
 ---
 

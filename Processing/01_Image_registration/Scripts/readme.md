@@ -1,7 +1,7 @@
 ## Image Registration Scripts - Installation and Usage
 
 ### Source and Author Information
-- **Modified from:** [Ashlar Workflow](https://github.com/farkkilab/image_processing/blob/main/pipeline/1_stitching/ashlar_workflow.py)
+- **Modified from:** [Färkkilä Lab - Ashlar Workflow](https://github.com/farkkilab/image_processing/blob/main/pipeline/1_stitching/ashlar_workflow.py)
 - **Author:** Cruz Osuna (cruzosuna2003@gmail.com)
 
 ---

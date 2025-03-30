@@ -51,12 +51,12 @@ dependencies:
 ## Installation
 Make sure you have Conda installed. To create the environment, run:
 ```bash
-conda env create -f environment.yml
+conda env create -f napari-env.yml
 ```
 
 Activate the environment:
 ```bash
-conda activate napari_tools
+conda activate napari-env
 ```
 
 ---
@@ -86,5 +86,5 @@ This will open the Napari viewer with the available widgets, including options f
 ## Troubleshooting
 If you encounter any issues, make sure that all dependencies are correctly installed and that the environment is properly activated.
 
-For additional help, please reach out to the author at the email provided above.
+For additional help, please reach out to the authors at the emails provided above.
 
