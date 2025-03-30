@@ -7,9 +7,9 @@ from os.path import join, exists, basename, splitext, isfile
 import subprocess
 
 # ----------------- Configuration (Update these paths) -----------------
-my_path = "/media/cruz/Mice/CycIF_mice_p53/1_Registration/RCPNLS"
-output_path = "/media/cruz/Mice/CycIF_mice_p53/2_Visualization/t-CycIF/images_illumination_corrected"
-illumination_base = "/media/cruz/Mice/CycIF_mice_p53/00_Illumination_correction/output"
+my_path = "/media/cruz/Spatial/CycIF_human_2024/1_Registration/RCPNLS/Done"
+output_path = "/media/cruz/Spatial/CycIF_human_2024/2_Visualization/t-CycIF/Images_illumination-corrected"
+illumination_base = "/media/cruz/Spatial/CycIF_human_2024/0_Illumination_correction/output"
 # -----------------------------------------------------------------------
 
 file_type = 'rcpnl'

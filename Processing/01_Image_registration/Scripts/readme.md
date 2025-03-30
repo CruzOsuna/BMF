@@ -31,7 +31,7 @@ Run the stitching script using:
 ```bash
 python stitching.py -c <n>
 ```
-Replace `<n>` with the desired number of threads for parallel processing. If no value is specified, the script defaults to using 4 threads.
+Replace `<n>` with the desired number of threads for parallel processing. If no value is specified, the script defaults to using 4 threads (Each image processed in parallel requires approximately 5 GB of RAM).
 
 ---
 
