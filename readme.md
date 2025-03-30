@@ -5,7 +5,7 @@
 
 Generic readme file generated with IA, pending improvement and corrections.
 
-![Pipeline Overview](https://via.placeholder.com/800x200.png?text=Workflow+Diagram+-+Under+Construction)
+![Pipeline Overview](https://github.com/CruzOsuna/BMF/blob/main/workflow.png)
 
 ---
 
