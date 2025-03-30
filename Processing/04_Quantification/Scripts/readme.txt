@@ -1,20 +1,20 @@
-# Installation instructions and usage of the quantification scripts
+# Quantification Scripts - Installation and Usage
 
 ## Overview
-The quantification scripts are designed to process image data from the CycIF platform. This version is adapted from the Laboratory of Systems Pharmacology (LSP) repository: [LSP GitHub](https://github.com/labsyspharm). 
+The quantification scripts are designed to process image data from the CycIF platform. This version is adapted from the Laboratory of Systems Pharmacology (LSP) repository: [LSP GitHub](https://github.com/labsyspharm).
 
 **Author:** Cruz Osuna (cruzosuna2003@gmail.com)
 
 ---
 
 ## Installation
-Make sure you have Conda installed on your system. To create the environment, run the following command:
+Ensure you have Conda installed on your system. To create the environment, execute the following command:
 
 ```bash
 conda env create -f quantification.yml
 ```
 
-This will set up the required Python environment with all necessary dependencies.
+This command will set up the necessary Python environment with all required dependencies.
 
 ---
 
@@ -44,14 +44,16 @@ Then, execute the script:
 ./quantification_parallel.sh
 ```
 
-The script will utilize parallel processing with up to 8 jobs simultaneously, speeding up the quantification process.
+The script leverages parallel processing to handle multiple images simultaneously (up to 8 jobs), significantly reducing processing time.
 
 ---
 
-## Configuration for Parallel Execution
-To set up parallel execution, create a file named `quantification_parallel.sh` with the necessary paths and parameters. The script should include the following sections:
+## Setting Up Parallel Execution
+To configure parallel execution, follow these steps:
 
-1. **Configuration:** Define the paths for the images, masks, channel names, and output directory. Example:
+1. **Create the script file:** Save the following script as `quantification_parallel.sh`.
+
+2. **Configuration:** Set the paths for the images, masks, channel names, and output directory. Example:
 
 ```bash
 IMAGE_DIR="/path/to/images"
@@ -60,9 +62,9 @@ CHANNEL_NAMES="/path/to/metadata/channels.csv"
 OUTPUT_DIR="/path/to/output"
 ```
 
-2. **Path Verification:** Check if the specified directories and files exist.
+3. **Path Verification:** Ensure the specified directories and files exist before running the script.
 
-3. **Execution:** Use the `find` command to locate the image files and run the processing script in parallel using GNU Parallel.
+4. **Parallel Processing:** Use the `find` command to search for image files and process them in parallel using GNU Parallel.
 
-By following these instructions, you will be able to perform batch image quantification efficiently using parallel processing.
+By following these instructions, you will be able to efficiently perform batch image quantification using parallel processing. Make sure to check the output directory for the results after the script finishes.
 
