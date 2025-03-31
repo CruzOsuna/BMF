@@ -37,7 +37,7 @@ class SettingsDialog(QDialog):
             "Open image", "Open mask", "Load shapes",
             "Contrast limits", "Save shapes", "Crop ROI",
             "Count cells", "Export cells", "Metadata",
-            "Voronoi", "Close all"
+            "Voronoi", "Close all", "Save Viewport"
         ]
         
         self.settings = QSettings("MyLab", "NapariTools")
@@ -74,6 +74,7 @@ viewer = napari.Viewer()
 # Widget implementations
 # -------------------------------------------------------------------------------
 
+
 @magicgui(
     call_button='Open image',
     layout='vertical',
@@ -88,19 +89,14 @@ viewer = napari.Viewer()
         "mode": "r",
         "nullable": True
     },
-    ab_list_path={
-        "label": "Channel Names (optional)",
-        "filter": "*.txt",
-        "mode": "r",
-        "nullable": True
-    }
+
+
 )
 def open_large_image(image_path: Path = Path("."), 
                     contrast_limit_txt: Path = None,
                     ab_list_path: Path = None):
     """Open a multichannel image with optional parameters"""
     try:
-        # Validate main image
         if not image_path.is_file():
             show_info("Please select a valid image file")
             return
@@ -125,21 +121,35 @@ def open_large_image(image_path: Path = Path("."),
                 show_info(f"Error reading contrast limits: {str(e)}")
                 return
 
-        # Load image
+        # Load image metadata and data
         with tiff.TiffFile(image_path) as tf:
-            is_pyramidal = len(tf.series[0].levels) > 1
-            num_channels = tf.series[0].shape[0]
-            
+            series = tf.series[0]
+            axes = series.axes
+
+            # Determine number of channels
+            if 'C' in axes:
+                c_idx = axes.index('C')
+                num_channels = series.shape[c_idx]
+            else:
+                num_channels = 1  # Single-channel image
+
+            is_pyramidal = len(series.levels) > 1
+
+            # Load image data
+            if is_pyramidal:
+                pyramid = [da.from_zarr(zarr.open(tf.aszarr(level=i))) for i in range(len(series.levels))]
+            else:
+                pyramid = [da.from_zarr(zarr.open(tf.aszarr()))]
+
+            # Add channel dimension if missing
+            if 'C' not in axes:
+                pyramid = [level[np.newaxis, ...] for level in pyramid]
+
             # Generate automatic channel names if needed
             if not channel_names:
                 channel_names = [f"Channel_{i+1}" for i in range(num_channels)]
-            
-            pyramid = [
-                da.from_zarr(zarr.open(tf.aszarr(level=i))) 
-                for i in range(len(tf.series[0].levels))
-            ] if is_pyramidal else [da.from_zarr(zarr.open(tf.aszarr()))]
 
-        # Add to viewer
+        # Add image to viewer
         viewer.add_image(
             pyramid,
             channel_axis=0,
@@ -153,6 +163,7 @@ def open_large_image(image_path: Path = Path("."),
 
     except Exception as e:
         show_info(f"Critical error: {str(e)}")
+
 
 @magicgui(call_button='Open mask', layout='vertical')
 def open_mask(mask_path=Path()):
@@ -326,6 +337,92 @@ def voronoi_plot(output_dir: Path, adata_path=Path(), shape_name="", image_name=
                   overlay_point_alpha=1, legend_size=15, overlay_points_colors=n_colors, colors=n_colors,
                   fileName=f"{file_name}.pdf", saveDir=str(output_dir))
 
+
+@magicgui(
+    call_button='Save Viewport',
+    layout='vertical',
+    output_dir={"label": "Output Directory", "mode": "d"},
+    filename={"label": "Filename", "tooltip": "Without extension"},
+    image_layer={
+        "label": "Image Layer", 
+        "choices": lambda _: [layer.name for layer in viewer.layers if isinstance(layer, napari.layers.Image)]
+    }
+)
+def save_viewport(
+    output_dir: Path = Path.home(),
+    filename: str = "viewport_snapshot",
+    image_layer: str = None
+):
+    """Save current field of view as TIFF"""
+    try:
+        if not image_layer:
+            show_info("Please select an image layer")
+            return
+            
+        layer = viewer.layers[image_layer]
+        
+        # Get current view parameters
+        view = viewer.window.qt_viewer
+        canvas_size = view.canvas.size
+        camera_zoom = view.camera.zoom
+
+        # Calculate visible area in data coordinates
+        transform = layer._transforms[0:2]  # Get spatial transforms
+        visible_rect = view.camera.rect
+        top_left = transform.inverse(visible_rect.top_left)
+        bottom_right = transform.inverse(visible_rect.bottom_right)
+
+        # Convert to pixel coordinates
+        y_start = int(max(0, top_left[0]))
+        y_end = int(min(layer.data.shape[-2], bottom_right[0]))
+        x_start = int(max(0, top_left[1]))
+        x_end = int(min(layer.data.shape[-1], bottom_right[1]))
+
+        # Handle multiscale images
+        if layer.multiscale:
+            # Calculate optimal pyramid level
+            base_scale = layer.data[0].shape[-2:]
+            scale_factors = [
+                (base_scale[0]/level_data.shape[-2], 
+                base_scale[1]/level_data.shape[-1]
+            ) for level_data in layer.data
+            ]
+            
+            # Find level closest to current zoom
+            target_scale = 1 / camera_zoom
+            level = np.argmin([
+                abs((sf[0] + sf[1])/2 - target_scale) 
+                for sf in scale_factors
+            ])
+            
+            data = layer.data[level]
+            sf_y, sf_x = scale_factors[level]
+
+            # Adjust coordinates for pyramid level
+            y_start = int(y_start / sf_y)
+            y_end = int(y_end / sf_y)
+            x_start = int(x_start / sf_x)
+            x_end = int(x_end / sf_x)
+        else:
+            data = layer.data
+
+        # Extract viewport data
+        if data.ndim == 2:
+            viewport = data[y_start:y_end, x_start:x_end]
+        elif data.ndim == 3:  # Handle CYX format
+            viewport = data[:, y_start:y_end, x_start:x_end]
+        else:
+            show_info("Unsupported image dimensions")
+            return
+
+        # Save TIFF
+        output_path = output_dir / f"{filename}.tiff"
+        tiff.imwrite(output_path, viewport)
+        show_info(f"Viewport saved:\n{output_path.name}")
+
+    except Exception as e:
+        show_info(f"Error saving viewport: {str(e)}")
+
 # -------------------------------------------------------------------------------
 # Final configuration
 # -------------------------------------------------------------------------------
@@ -342,22 +439,25 @@ widget_map = {
     "Export cells": save_selected_cells,
     "Metadata": view_metadata,
     "Voronoi": voronoi_plot,
-    "Close all": close_all
+    "Close all": close_all,
+    "Save Viewport": save_viewport  # Added entry
 }
+
 
 # 2. Define tab configuration
 tab_config = {
     "Input": ["Open image", "Open mask", "Load shapes"],
     "Analysis": ["Count cells", "Metadata", "Voronoi"],
-    "Export": ["Contrast limits", "Save shapes", "Crop ROI", "Export cells"],
+    "Export": ["Contrast limits", "Save shapes", "Crop ROI", "Save Viewport", "Export cells"],
     "Tools": ["Close all"]
 }
+
 
 # 3. Add widgets to viewer
 for tab_name, widgets in tab_config.items():
     tab_widgets = []
     for w in widgets:
-        if dialog.checkboxes[w].isChecked():
+        if w in dialog.checkboxes and dialog.checkboxes[w].isChecked():
             tab_widgets.append(widget_map[w])
     
     if tab_widgets:
@@ -392,3 +492,6 @@ def config_widgets():
 viewer.window.add_dock_widget(config_widgets, area='right')
 
 napari.run()
+
+
+

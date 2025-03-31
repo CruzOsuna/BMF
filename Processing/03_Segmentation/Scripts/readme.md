@@ -55,6 +55,11 @@ conda list | grep numpy  # Should display numpy ~1.26.0
 conda activate stardist
 ```
 
+Ensure that the correct paths are specified in `stardist_segmentation.py` scripts before execution.
+
+Select the script to use depending on the GPU you have available, if your GPU has more than 32 GB of VRAM use the `GPU_high-end` script, if it has less than 32 use the `GPU_mid-range`.
+
+
 ### Step 2: Execute the Segmentation Script
 ```bash
 python stardist_segmentation.py
