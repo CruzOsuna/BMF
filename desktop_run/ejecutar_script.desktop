@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=Napari Viewer
+Exec=/home/cruz-osuna/Desktop/run_napari.sh
+Icon=/home/cruz-osuna/Documents/napari_logo.png
+Terminal=true

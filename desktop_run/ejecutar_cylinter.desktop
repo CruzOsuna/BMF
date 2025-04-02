@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=Cylinter
+Exec=/home/cruz-osuna/Desktop/run_cylinter.sh
+Icon=/home/cruz-osuna/Documents/cylinter_logo.png
+Terminal=true
