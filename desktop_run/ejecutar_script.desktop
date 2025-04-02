@@ -1,6 +1,6 @@
 [Desktop Entry]
 Type=Application
 Name=Napari Viewer
-Exec=/home/cruz-osuna/Desktop/run_napari.sh
-Icon=/home/cruz-osuna/Documents/napari_logo.png
+Exec=/home/cruz/Escritorio/BMF_t-CyCIF/desktop_run/run_napari.sh
+Icon=/home/cruz/Escritorio/BMF_t-CyCIF/desktop_run/napari_logo.png
 Terminal=true
