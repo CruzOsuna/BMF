@@ -5,12 +5,13 @@ import random
 from scipy.spatial import KDTree
 import math
 import re
+import time  # Added import for timing
 
 # ========================================================================
 # CONFIGURABLE PARAMETERS
 # ========================================================================
 USE_LINE_BUFFER = False   # True: Generate around line, False: Use polygon
-NUM_POINTS = 100        
+NUM_POINTS = 1000        
 SIDE_DISTANCE = 100      # Buffer width (only for line mode)
 STEP_SIZE = 10          
 MAX_STEPS = 100          
@@ -68,6 +69,8 @@ def generate_random_points(polygon, num_points):
 # MAIN PROCESSING
 # ========================================================================
 def main():
+    start_time = time.time()  # Start timing
+    
     # Create sampling area
     sampling_area = create_sampling_area()
     
@@ -108,6 +111,9 @@ def main():
         results.append(row)
     
     pd.DataFrame(results).to_csv(OUTPUT_FILE, index=False)
+    
+    end_time = time.time()  # End timing
+    print(f"\nTotal execution time: {end_time - start_time:.2f} seconds")
 
 if __name__ == "__main__":
     main()
