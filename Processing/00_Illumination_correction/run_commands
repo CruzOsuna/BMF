@@ -1,4 +1,4 @@
-# Internal file for the execution of the illumination correction scripts for the diferent datasets
+# Internal file (BMF Lab) of commands for the execution of the illumination correction scripts for the diferent datasets
 
 
 Name structure: 
@@ -25,8 +25,8 @@ sudo docker run \
   --privileged -it -m 32g --cpus=14 \
   -u $(id -u):$(id -g) \
   --mount type=bind,source="/media/cruz/Spatial",target=/mnt/external \
-  --mount type=bind,source="/media/cruz/Spatial/CycIF_human_2025/1_Registration/RCPNLS/Done/",target=/data/input \
-  --mount type=bind,source="/media/cruz/Spatial/CycIF_human_2025/0_Illumination_correction/output",target=/data/output \
+  --mount type=bind,source="/media/cruz/Spatial/t-CycIF_human_2025/01_Registration/RCPNLS/",target=/data/input \
+  --mount type=bind,source="/media/cruz/Spatial/t-CycIF_human_2025/00_Illumination_correction/output",target=/data/output \
   --mount type=bind,source="$(pwd)",target=/scripts \
   mybasic-image /scripts/BaSiC_run.sh
 

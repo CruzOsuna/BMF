@@ -1,5 +1,8 @@
 #Functions for reading in single cell imaging data
-#Joshua Hess
+#Modified from Joshua Hess script from XXXXXX
+
+#Author: Cruz Osuna 
+#Numba optimizations integrated
 
 #Import necessary modules
 import skimage.io
@@ -10,26 +13,40 @@ import os
 import skimage.measure
 import skimage.measure._regionprops
 import tifffile
+import numba  # Added for Numba JIT
 
 from pathlib import Path
 
-#### Additional functions that can be specified by the user via intensity_props
+#### Additional functions optimized with Numba ####
 
-## Function to calculate median intensity values per mask 
+@numba.njit(cache=True, nogil=True)
 def intensity_median(mask, intensity):
+    """Calculate median intensity with Numba acceleration"""
     return np.median(intensity[mask])
 
-## Function to sum intensity values (or in this case transcript counts)
+@numba.njit(cache=True, nogil=True)
 def intensity_sum(mask, intensity):
+    """Calculate intensity sum with Numba acceleration"""
     return np.sum(intensity[mask])
 
-## Function to calculate the gini index: https://en.wikipedia.org/wiki/Gini_coefficient
+@numba.njit(cache=True, nogil=True)
 def gini_index(mask, intensity):
+    """Calculate Gini index with Numba acceleration"""
     x = intensity[mask]
+    if len(x) == 0:
+        return 0.0  # Handle empty mask
+    
     sorted_x = np.sort(x)
     n = len(x)
-    cumx = np.cumsum(sorted_x, dtype=float)
-    return (n + 1 - 2 * np.sum(cumx) / cumx[-1]) / n
+    cumx = np.cumsum(sorted_x)
+    total = cumx[-1]
+    
+    if total == 0:
+        return 0.0  # Avoid division by zero
+    
+    return (n + 1 - 2 * np.sum(cumx) / total) / n
+
+### MAIN PROCESSING FUNCTIONS ###
 
 def MaskChannel(mask_loaded, image_loaded_z, intensity_props=["intensity_mean"]):
     """Function for quantifying a single channel image
@@ -37,17 +54,14 @@ def MaskChannel(mask_loaded, image_loaded_z, intensity_props=["intensity_mean"])
     Returns a table with CellID according to the mask and the mean pixel intensity
     for the given channel for each cell"""
     standard_props = set(skimage.measure._regionprops.COL_DTYPES)
-    # Look for regionprops in skimage
     builtin_props = set(intensity_props).intersection(standard_props)
-    # Otherwise look for them in this module
     extra_props = set(intensity_props).difference(standard_props)
     dat = skimage.measure.regionprops_table(
         mask_loaded, image_loaded_z,
-        properties = tuple(builtin_props),
-        extra_properties = [globals()[n] for n in extra_props]
+        properties=tuple(builtin_props),
+        extra_properties=[globals()[n] for n in extra_props]
     )
     return dat
-
 
 def MaskIDs(mask, mask_props=None):
     """This function will extract the CellIDs and the XY positions for each

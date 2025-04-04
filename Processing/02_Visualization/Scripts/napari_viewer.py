@@ -25,6 +25,8 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtCore import QSettings, Qt
 import sys
 from dask_image.imread import imread as daskread
+from io import BytesIO
+import re
 
 # Initial configuration
 class SettingsDialog(QDialog):
@@ -37,7 +39,7 @@ class SettingsDialog(QDialog):
             "Open image", "Open mask", "Load shapes",
             "Contrast limits", "Save shapes", "Crop ROI",
             "Count cells", "Export cells", "Metadata",
-            "Voronoi", "Close all", "Save Viewport"
+            "Voronoi", "Save Viewport" , "Load points" ,"Close all" 
         ]
         
         self.settings = QSettings("MyLab", "NapariTools")
@@ -174,22 +176,37 @@ def open_mask(mask_path=Path()):
 
 @magicgui(call_button='Load Shapes', layout='vertical', shapes_path={"mode": "d"})
 def load_shapes(shapes_path: Path):
+    """Load shapes from text files with numpy array syntax"""
     shapes_path = Path(shapes_path)
     if not shapes_path.is_dir():
         show_info("Please select a valid directory")
         return
         
-    names = []
     for filename in shapes_path.glob("*.txt"):
-        name = filename.stem
-        names.append(name)
-        with open(filename, 'r') as f:
-            shapes_str = f.read()
-        shapes_str = shapes_str.replace('\n', '').replace('      ', '').replace('array(', '').replace(')', '')
-        shapes = ast.literal_eval(shapes_str)
-        shape_arrays = [np.array(s) for s in shapes]
-        viewer.add_shapes(shape_arrays, shape_type='polygon', edge_width=0,
-                        edge_color='#777777ff', face_color='white', name=name)
+        try:
+            with open(filename, 'r') as f:
+                content = f.read()
+            
+            # Use regex to parse numpy array syntax
+            match = re.search(r'array\((.*?),\s*dtype=(\w+)\)', content, re.DOTALL)
+            if not match:
+                raise ValueError("Invalid numpy array format")
+            
+            array_str, dtype_str = match.groups()
+            array_data = ast.literal_eval(array_str.strip())
+            shape_array = np.array(array_data, dtype=getattr(np, dtype_str))
+            
+            viewer.add_shapes(
+                shape_array,
+                shape_type='polygon',
+                edge_width=1,
+                edge_color='#777777',
+                face_color='transparent',
+                name=filename.stem
+            )
+            
+        except Exception as e:
+            show_info(f"Error loading {filename.name}:\n{str(e)}")
 
 @magicgui(call_button='Save contrast limits', layout='vertical', output_file={"mode": "d"})
 def save_contrast_limits(output_file: Path, ab_list_path=Path(), name=""):
@@ -423,6 +440,44 @@ def save_viewport(
     except Exception as e:
         show_info(f"Error saving viewport: {str(e)}")
 
+@magicgui(call_button='Load Points', layout='vertical', points_path={"mode": "r", "filter": "*.csv"})
+def load_points(points_path: Path):
+    """Load sampling points layer from CSV"""
+    try:
+        # Read CSV with points data
+        points_df = pd.read_csv(points_path)
+        
+        # Validate required columns
+        if not {'x', 'y'}.issubset(points_df.columns):
+            show_info("CSV must contain 'x' and 'y' columns")
+            return
+
+        # Extract coordinates and optional properties
+        points_data = points_df[['x', 'y']].values
+        properties = {
+            'label': points_df['label'].tolist() if 'label' in points_df.columns else None
+        }
+
+        # Create points layer with optional text labels
+        points_layer = viewer.add_points(
+            points_data,
+            name=points_path.stem,
+            size=10,
+            face_color='magenta',
+            edge_color='black',
+            properties=properties,
+            text='label' if 'label' in points_df.columns else None
+        )
+
+        # Set initial visibility settings
+        points_layer.visible = True
+        show_info(f"Loaded {len(points_data)} points from {points_path.name}")
+
+    except Exception as e:
+        show_info(f"Error loading points: {str(e)}")
+
+
+
 # -------------------------------------------------------------------------------
 # Final configuration
 # -------------------------------------------------------------------------------
@@ -435,18 +490,20 @@ widget_map = {
     "Contrast limits": save_contrast_limits,
     "Save shapes": save_shapes,
     "Crop ROI": cut_mask,
-    "Count cells": count_selected_cells,
-    "Export cells": save_selected_cells,
+    "Count cells": count_selected_cells,   # Under development
+    "Export cells": save_selected_cells,  # Under development
     "Metadata": view_metadata,
     "Voronoi": voronoi_plot,
-    "Close all": close_all,
-    "Save Viewport": save_viewport  # Added entry
+    "Load points": load_points,   # Under development
+    "Save Viewport": save_viewport,  # Under development
+    "Close all": close_all
+
 }
 
 
 # 2. Define tab configuration
 tab_config = {
-    "Input": ["Open image", "Open mask", "Load shapes"],
+    "Input": ["Open image", "Open mask", "Load shapes" , "Load points"],
     "Analysis": ["Count cells", "Metadata", "Voronoi"],
     "Export": ["Contrast limits", "Save shapes", "Crop ROI", "Save Viewport", "Export cells"],
     "Tools": ["Close all"]
