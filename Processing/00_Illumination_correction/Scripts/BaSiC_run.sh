@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# export _JAVA_OPTIONS="-Xms25g -Xmx25g" # RAM reduction to 25gb
+# export _JAVA_OPTIONS="-Xms8g -Xmx8g" # RAM reduction to 25gb
 
 # Define paths and file type
 MY_PATH="/data/input/"
