@@ -11,8 +11,8 @@ from stardist.models import StarDist2D
 
 # input path must only have the images to segment
 # output path should be an empty folder
-INPUT_PATH = "/media/cruz/Spatial/CycIF_human_2024/2_Visualization/t-CycIF/Images_illumination-corrected"
-OUTPUT_PATH = "/media/cruz/Spatial/CycIF_human_2024/3_Segmentation/Mask_illumination-corrected/" # remember to add / in the end
+INPUT_PATH = "/media/cruz-osuna/Spatial/t-CycIF_human_2025/02_Visualization/t-CycIF/Images_IC"
+OUTPUT_PATH = "/media/cruz-osuna/Spatial/t-CycIF_human_2025/04_Segmentation/Mask/" # remember to add / in the end
 # x = 8 # x number of tiles
 # y = 8 # y number of tiles
 arr = os.listdir(INPUT_PATH)
