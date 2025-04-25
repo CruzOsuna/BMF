@@ -30,7 +30,6 @@ from dask_image.imread import imread as daskread
 from io import BytesIO
 import re
 from magicgui.widgets import PushButton
-from napari.layers import Shapes, Image
 
 # Initial configuration
 class SettingsDialog(QDialog):
@@ -81,13 +80,6 @@ viewer = napari.Viewer()
 # Widget implementations
 # -------------------------------------------------------------------------------
 
-
-
-# -------------------------------------------------------------------------------
-# Widget implementations - Extract Cells in Shape
-# -------------------------------------------------------------------------------
-
-
 @magicgui(
     call_button='Open image',
     layout='vertical',
@@ -103,8 +95,8 @@ viewer = napari.Viewer()
         "nullable": True
     },
     ab_list_path={
-        "label": "Channel Names",
-        "filter": "*.txt",
+        "label": "Channel Names (CSV)",
+        "filter": "*.csv",
         "mode": "r",
         "nullable": True
     }
@@ -181,22 +173,12 @@ def open_large_image(image_path: Path = Path("."),
     except Exception as e:
         show_info(f"Critical error: {str(e)}")
 
-
-# -------------------------------------------------------------------------------
-# Widget implementations - Extract Cells in Shape
-# -------------------------------------------------------------------------------
-
 @magicgui(call_button='Open mask', layout='vertical')
 def open_mask(mask_path=Path()):
     seg_m = tiff.imread(mask_path)
     if (len(seg_m.shape) > 2) and (seg_m.shape[0] > 1):
         seg_m = seg_m[0]
     viewer.add_labels(seg_m, name='MASK')
-
-
-# -------------------------------------------------------------------------------
-# Widget implementations - Extract Cells in Shape
-# -------------------------------------------------------------------------------
 
 @magicgui(call_button='Load Shapes', layout='vertical', shapes_path={"mode": "d"})
 def load_shapes(shapes_path: Path):
@@ -232,13 +214,6 @@ def load_shapes(shapes_path: Path):
         except Exception as e:
             show_info(f"Error loading {filename.name}:\n{str(e)}")
 
-
-
-# -------------------------------------------------------------------------------
-# Widget implementations - Extract Cells in Shape
-# -------------------------------------------------------------------------------
-
-
 @magicgui(call_button='Save contrast limits', layout='vertical', output_file={"mode": "d"})
 def save_contrast_limits(output_file: Path, ab_list_path=Path(), name=""):
     contrast_limit = []
@@ -250,24 +225,11 @@ def save_contrast_limits(output_file: Path, ab_list_path=Path(), name=""):
     with open(output_file / f"{name}.txt", "w") as output:
         output.write(str(contrast_limit))
 
-
-
-# -------------------------------------------------------------------------------
-# Widget implementations - Extract Cells in Shape
-# -------------------------------------------------------------------------------
-
 @magicgui(call_button='Save shape array', layout='vertical', output_file={"mode": "d"})
 def save_shapes(output_file: Path, shape_name=""):
     shapes = viewer.layers[shape_name].data
     with open(output_file / f"{shape_name}.txt", 'w') as output:
         output.write(str(shapes))
-
-
-
-# -------------------------------------------------------------------------------
-# Widget implementations - Extract Cells in Shape
-# -------------------------------------------------------------------------------
-
 
 @magicgui(call_button='Cut and Save ROIs', filepath={"mode": "d"})
 def cut_mask(filepath: Path, shape_name=""):
@@ -291,21 +253,9 @@ def cut_mask(filepath: Path, shape_name=""):
     df = df.astype(int)
     df.to_csv(filepath / f'{shape_name}_selected_cell_ids.csv', index=False)
 
-
-
-# -------------------------------------------------------------------------------
-# Widget implementations - Extract Cells in Shape
-# -------------------------------------------------------------------------------
-
 @magicgui(call_button='Close all', layout='vertical')
 def close_all():
     viewer.layers.clear()
-
-
-
-# -------------------------------------------------------------------------------
-# Widget implementations - Extract Cells in Shape
-# -------------------------------------------------------------------------------
 
 @magicgui(call_button='View metadata', layout='vertical')
 def view_metadata(adata_path=Path(), image_name="", metadata_column=""):
@@ -321,14 +271,7 @@ def view_metadata(adata_path=Path(), image_name="", metadata_column=""):
         points = coordinates.values
         r = lambda: random.randint(0, 255)
         point_color = '#%02X%02X%02X' % (r(), r(), r())
-        viewer.add_points(points, size=25, face_color=point_color, visible=False, name=i)
-
-
-
-
-# -------------------------------------------------------------------------------
-# Widget implementations - Extract Cells in Shape
-# -------------------------------------------------------------------------------
+        viewer.add_points(points, size=10, face_color=point_color, visible=False, name=i)
 
 @magicgui(call_button='Count selected cells', layout='vertical')
 def count_selected_cells(shape_name: str = "", cell_info_csv: Path = Path()):
@@ -350,13 +293,6 @@ def count_selected_cells(shape_name: str = "", cell_info_csv: Path = Path()):
     cell_count = len(unique_cells)
 
     show_info(f'Total cells within "{shape_name}": {cell_count}')
-
-
-
-
-# -------------------------------------------------------------------------------
-# Widget implementations - Extract Cells in Shape
-# -------------------------------------------------------------------------------
 
 @magicgui(call_button='Save cells in selected ROI', layout='vertical', output_csv={"mode": "d"})
 def save_selected_cells(output_csv: Path, shape_name: str = "", cell_info_csv: Path = Path(), output_file_name: str = ""):
@@ -402,13 +338,6 @@ def save_selected_cells(output_csv: Path, shape_name: str = "", cell_info_csv: P
     except Exception as e:
         show_info(f'Error saving selected cells file: {e}')
 
-
-
-
-# -------------------------------------------------------------------------------
-# Widget implementations - Extract Cells in Shape
-# -------------------------------------------------------------------------------
-
 @magicgui(call_button='Voronoi plot', layout='vertical', output_dir={"mode": "d"})
 def voronoi_plot(output_dir: Path, adata_path=Path(), shape_name="", image_name="", cluster_name="", file_name=""):
     path = str(adata_path)
@@ -431,13 +360,6 @@ def voronoi_plot(output_dir: Path, adata_path=Path(), shape_name="", image_name=
                   overlay_points=cluster_name, voronoi_alpha=0.7, voronoi_line_width=0.3, overlay_point_size=8,
                   overlay_point_alpha=1, legend_size=15, overlay_points_colors=n_colors, colors=n_colors,
                   fileName=f"{file_name}.pdf", saveDir=str(output_dir))
-
-
-
-
-# -------------------------------------------------------------------------------
-# Widget implementations - Extract Cells in Shape
-# -------------------------------------------------------------------------------
 
 @magicgui(
     call_button='Save Viewport',
@@ -526,13 +448,6 @@ def save_viewport(
     except Exception as e:
         show_info(f"Error saving viewport: {str(e)}")
 
-
-
-
-# -------------------------------------------------------------------------------
-# Widget implementations - Extract Cells in Shape
-# -------------------------------------------------------------------------------
-
 @magicgui(call_button='Load Points', layout='vertical', points_path={"mode": "r", "filter": "*.csv"})
 def load_points(points_path: Path):
     """Load sampling points layer from CSV"""
@@ -569,188 +484,129 @@ def load_points(points_path: Path):
     except Exception as e:
         show_info(f"Error loading points: {str(e)}")
 
-
 # -------------------------------------------------------------------------------
 # Widget implementations - Circle with n cells
 # -------------------------------------------------------------------------------
 
+def circle_coordinates(cx, cy, radius, num_points=100):
+    angles = np.linspace(0, 2*np.pi, num_points, endpoint=False)
+    x = cx + radius * np.cos(angles)
+    y = cy + radius * np.sin(angles)
+    return np.column_stack([x, y])
 
-# Widget button and handler
-pick_center_button = QPushButton("Pick Center with Click")
-
-def on_pick_center_click():
-    """Triggered when 'Pick Center with Click' button is pressed"""
-    show_info("Click on the image to select center...")
-
-    def get_click(layer, event):
-        """Mouse click handler with proper coordinate conversion"""
-        if event.type == 'mouse_press' and event.button == 1:
-            display_coords = event.position
-            data_coords = layer.world_to_data(display_coords)
-            
-            # Swap X/Y for physical coordinates
-            physical_x = data_coords[-1]  # This is actually Y in image terms
-            physical_y = data_coords[-2]  # This is actually X in image terms
-            
-            # Store coordinates
-            create_circle_for_n_cells.center_x_display.value = display_coords[0]
-            create_circle_for_n_cells.center_y_display.value = display_coords[1]
-            create_circle_for_n_cells.center_x_physical.value = physical_x
-            create_circle_for_n_cells.center_y_physical.value = physical_y
-            
-            show_info(f"Display: X={display_coords[0]:.1f}, Y={display_coords[1]:.1f}\n"
-                     f"Physical: X={physical_x:.1f}, Y={physical_y:.1f}")
-            layer.mouse_drag_callbacks.remove(get_click)
-
-    if viewer.layers:
-        viewer.layers[0].mouse_drag_callbacks.append(get_click)
-    else:
-        show_info("No image layer available!")
-
-pick_center_button.clicked.connect(on_pick_center_click)
-
-# Main widget function
 @magicgui(
-    call_button='Create Circle',
+    call_button='Create circle',
     layout='vertical',
     cell_info_csv={"label": "Cell Data CSV", "mode": "r", "filter": "*.csv"},
-    center_x_display={
-        'visible': False,
-        'min': -1e10,
-        'max': 1e10,
-        'tooltip': 'X coordinate in display space'
-    },
-    center_y_display={
-        'visible': False,
-        'min': -1e10,
-        'max': 1e10,
-        'tooltip': 'Y coordinate in display space'
-    },
-    center_x_physical={'visible': False, 'min': -1e10, 'max': 1e10},
-    center_y_physical={'visible': False, 'min': -1e10, 'max': 1e10},
-    num_cells={
-        'min': 1,
-        'max': 1_000_000,
-        'step': 1,
-        'tooltip': 'Number of cells to include in the circle'
-    },
-    shape_name={
-        'tooltip': 'Base name for the new shape layer'
-    }
+    center_x={'min': -1e9, 'max': 1e9, 'step': 1},
+    center_y={'min': -1e9, 'max': 1e9, 'step': 1},
+    num_cells={'min': 1, 'max': 1e7, 'step': 1},
 )
 def create_circle_for_n_cells(
     cell_info_csv: Path = None,
-    center_x_display: float = 0.0,
-    center_y_display: float = 0.0,
-    center_x_physical: float = 0.0,
-    center_y_physical: float = 0.0,
-    shape_name: str = "ROI_Sample_#Circle",
+    center_x: float = 0.0,
+    center_y: float = 0.0,
+    shape_name: str = "circle_auto",
     num_cells: int = 1000
 ):
-    """Create a circle containing exactly n cells from CSV data"""
+    """Create a circle that contains exactly n cells from the CSV data"""
+    if cell_info_csv is None or not cell_info_csv.is_file():
+        show_info(f"CSV file not found: {cell_info_csv}")
+        return
+    
     try:
-        # Validate inputs
-        if not cell_info_csv or not cell_info_csv.exists():
-            show_info("Please select a valid CSV file")
-            return
-            
-        img_layer = next((l for l in viewer.layers if isinstance(l, Image)), None)
-        if not img_layer:
-            show_info("Load an image layer first!")
-            return
-
-        # Get image properties with axis swap
-        scale_y, scale_x = img_layer.scale[-2:]  # Swap scale factors
-        translate_y, translate_x = img_layer.translate[-2:]  # Swap translations
-
-        # Load and validate cell data
         df = pd.read_csv(cell_info_csv)
-        
-        # Verify required columns
-        required_columns = ['X_centroid', 'Y_centroid']
-        if not all(col in df.columns for col in required_columns):
-            show_info(f"CSV must contain columns: {required_columns}")
-            return
-
-        # Convert physical coordinates to display coordinates with axis swap
-        df['display_x'] = (df['Y_centroid'] - translate_x) / scale_x  # Swap X/Y
-        df['display_y'] = (df['X_centroid'] - translate_y) / scale_y  # Swap X/Y
-
-        # Calculate distances from center
-        df['distance'] = np.sqrt(
-            (df['display_x'] - center_x_display)**2 + 
-            (df['display_y'] - center_y_display)**2
-        )
-        
-        # Sort and find radius
-        df_sorted = df.sort_values('distance')
-        target_num = min(num_cells, len(df))
-        
-        if target_num == 0:
-            show_info("No cells found in the dataset!")
-            return
-            
-        radius_display = df_sorted.iloc[target_num-1]['distance']
-
-        # Generate circle points
-        theta = np.linspace(0, 2*np.pi, 100)
-        circle_pts = np.array([[
-            center_x_display + radius_display * np.cos(t),
-            center_y_display + radius_display * np.sin(t)
-        ] for t in theta])
-
-        # Create unique layer name
-        base_name = shape_name.split('#')[0]
-        existing_names = {layer.name for layer in viewer.layers}
-        suffix = 1
-        while f"{base_name}{suffix}" in existing_names:
-            suffix += 1
-        final_name = f"{base_name}{suffix}"
-
-        # Add debug visualization
-        debug_points = df_sorted.head(target_num)[['display_x', 'display_y']].values
-        viewer.add_points(
-            debug_points,
-            size=10,
-            face_color='red',
-            name=f'DEBUG_{final_name}',
-            visible=True
-        )
-
-        # Add shape to viewer
-        viewer.add_shapes(
-            data=[circle_pts],
-            shape_type='polygon',
-            edge_color='#ffdd00',
-            face_color='#0000ff22',
-            name=final_name,
-            scale=(1.0, 1.0),
-            translate=(0.0, 0.0)
-        )
-
-        show_info(
-            f"Circle created at:\n"
-            f"Display X: {center_x_display:.1f}, Y: {center_y_display:.1f}\n"
-            f"Mapped Cells: {target_num}/{num_cells}\n"
-            f"Radius: {radius_display:.1f}px"
-        )
-
     except Exception as e:
-        show_info(f"Error: {str(e)}")
+        show_info(f"Error reading CSV: {e}")
+        return
 
-# Widget container creation
+    possible_x_cols = ['X_centroid','x','X']
+    possible_y_cols = ['Y_centroid','y','Y']
+    
+    x_col, y_col = None, None
+    for c in possible_x_cols:
+        if c in df.columns:
+            x_col = c
+            break
+    for c in possible_y_cols:
+        if c in df.columns:
+            y_col = c
+            break
+
+    if x_col is None or y_col is None:
+        show_info("No X,Y coordinate columns found in CSV.")
+        return
+
+    df['dist_to_center'] = np.sqrt((df[x_col] - center_x)**2 + (df[y_col] - center_y)**2)
+    df_sorted = df.sort_values(by='dist_to_center')
+    
+    total_cells = len(df_sorted)
+    target_num = min(num_cells, total_cells)
+    if target_num < 1:
+        show_info("Not enough cells or invalid cell number requested.")
+        return
+    
+    distance_target = df_sorted.iloc[target_num - 1]['dist_to_center']
+    circle_pts = circle_coordinates(cx=center_x, cy=center_y, radius=distance_target)
+
+    existing_layer_names = [layer.name for layer in viewer.layers]
+    final_name = shape_name
+    if final_name in existing_layer_names:
+        final_name += "_new"
+    
+    viewer.add_shapes(
+        data=[circle_pts],
+        shape_type='polygon',
+        edge_color='yellow',
+        face_color='blue',
+        opacity=0.3,
+        name=final_name
+    )
+
+    show_info(
+        f"Circle created around ({center_x:.2f}, {center_y:.2f}) with radius={distance_target:.2f}.\n"
+        f"Total cells included: {target_num} (of {total_cells})."
+    )
+
+# Button to pick center with click
+pick_center_button = QPushButton("Pick center with click")
+
+def on_pick_center_click():
+    """Triggered when 'Pick center with click' button is pressed"""
+    show_info("Click on the image to select center...")
+
+    def get_click(layer, event):
+        """Callback that captures the first click and sets (center_x, center_y)"""
+        if event.type == 'mouse_press' and event.button == 1:
+            coords_world = event.position
+            coords_data = layer.world_to_data(coords_world)
+            
+            x_clicked, y_clicked = coords_data
+            create_circle_for_n_cells.center_x.value = x_clicked
+            create_circle_for_n_cells.center_y.value = y_clicked
+
+            show_info(f"Coordinates set: X={x_clicked:.2f}, Y={y_clicked:.2f}")
+            layer.mouse_drag_callbacks.remove(get_click)
+
+    if len(viewer.layers) > 0:
+        image_layer = viewer.layers[0]
+        image_layer.mouse_drag_callbacks.append(get_click)
+    else:
+        show_info("No layers available to detect click.")
+
+pick_center_button.changed.connect(on_pick_center_click)
+
+# Create a container widget for both the main widget and the button
 def create_circle_widget():
     container = QWidget()
     layout = QVBoxLayout()
     container.setLayout(layout)
+    
     layout.addWidget(create_circle_for_n_cells.native)
-    layout.addWidget(pick_center_button)
+    layout.addWidget(pick_center_button)  # Now a native QPushButton
+    
     return container
 
-
-# -------------------------------------------------------------------------------
-# Widget implementations - Extract Cells in Shape
-# -------------------------------------------------------------------------------
 
 @magicgui(
     call_button='Extract Cells in Shape',
@@ -758,7 +614,7 @@ def create_circle_widget():
     sample={"label": "Sample Name"},
     cell_csv={"label": "Cell Data CSV", "mode": "r", "filter": "*.csv"},
     shape_name={"label": "Shape Layer", "choices": lambda _: [layer.name for layer in viewer.layers if isinstance(layer, Shapes)]},
-    image_layer={"label": "Image Layer", "choices": lambda _: [layer.name for layer in viewer.layers if isinstance(layer, Image)]},
+    image_layer={"label": "Image Layer", "choices": lambda _: [layer.name for layer in viewer.layers if isinstance(layer, napari.layers.Image)]},
     output_dir={"label": "Output Directory", "mode": "d"},
     output_name={"label": "Output Filename"}
 )
@@ -777,23 +633,15 @@ def extract_cells_in_shape(
             show_info("Cell CSV file not found")
             return
             
-        # Find layers
-        shape_layer = None
-        for layer in viewer.layers:
-            if layer.name == shape_name and isinstance(layer, Shapes):
-                shape_layer = layer
-                break
-        if not shape_layer:
-            show_info(f"Shape layer '{shape_name}' not found")
+        shape_layer = viewer.layers.get(shape_name)
+        img_layer = viewer.layers.get(image_layer)
+        
+        if not shape_layer or not isinstance(shape_layer, Shapes):
+            show_info("Invalid shape layer selection")
             return
-
-        img_layer = None
-        for layer in viewer.layers:
-            if layer.name == image_layer and isinstance(layer, Image):
-                img_layer = layer
-                break
-        if not img_layer:
-            show_info(f"Image layer '{image_layer}' not found")
+            
+        if not img_layer or not isinstance(img_layer, napari.layers.Image):
+            show_info("Invalid image layer selection")
             return
 
         # Read and filter CSV
@@ -847,7 +695,6 @@ def extract_cells_in_shape(
 
     except Exception as e:
         show_info(f"Error: {str(e)}")
-
 
 
 

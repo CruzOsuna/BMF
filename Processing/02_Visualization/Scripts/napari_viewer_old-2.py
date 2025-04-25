@@ -25,6 +25,8 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtCore import QSettings, Qt
 import sys
 from dask_image.imread import imread as daskread
+from io import BytesIO
+import re
 
 # Initial configuration
 class SettingsDialog(QDialog):
@@ -37,7 +39,7 @@ class SettingsDialog(QDialog):
             "Open image", "Open mask", "Load shapes",
             "Contrast limits", "Save shapes", "Crop ROI",
             "Count cells", "Export cells", "Metadata",
-            "Voronoi", "Close all", "Save Viewport"
+            "Voronoi", "Save Viewport" , "Load points", "Export cells in shape" , "Circle with n cells","Close all" 
         ]
         
         self.settings = QSettings("MyLab", "NapariTools")
@@ -174,22 +176,37 @@ def open_mask(mask_path=Path()):
 
 @magicgui(call_button='Load Shapes', layout='vertical', shapes_path={"mode": "d"})
 def load_shapes(shapes_path: Path):
+    """Load shapes from text files with numpy array syntax"""
     shapes_path = Path(shapes_path)
     if not shapes_path.is_dir():
         show_info("Please select a valid directory")
         return
         
-    names = []
     for filename in shapes_path.glob("*.txt"):
-        name = filename.stem
-        names.append(name)
-        with open(filename, 'r') as f:
-            shapes_str = f.read()
-        shapes_str = shapes_str.replace('\n', '').replace('      ', '').replace('array(', '').replace(')', '')
-        shapes = ast.literal_eval(shapes_str)
-        shape_arrays = [np.array(s) for s in shapes]
-        viewer.add_shapes(shape_arrays, shape_type='polygon', edge_width=0,
-                        edge_color='#777777ff', face_color='white', name=name)
+        try:
+            with open(filename, 'r') as f:
+                content = f.read()
+            
+            # Use regex to parse numpy array syntax
+            match = re.search(r'array\((.*?),\s*dtype=(\w+)\)', content, re.DOTALL)
+            if not match:
+                raise ValueError("Invalid numpy array format")
+            
+            array_str, dtype_str = match.groups()
+            array_data = ast.literal_eval(array_str.strip())
+            shape_array = np.array(array_data, dtype=getattr(np, dtype_str))
+            
+            viewer.add_shapes(
+                shape_array,
+                shape_type='polygon',
+                edge_width=1,
+                edge_color='#777777',
+                face_color='transparent',
+                name=filename.stem
+            )
+            
+        except Exception as e:
+            show_info(f"Error loading {filename.name}:\n{str(e)}")
 
 @magicgui(call_button='Save contrast limits', layout='vertical', output_file={"mode": "d"})
 def save_contrast_limits(output_file: Path, ab_list_path=Path(), name=""):
@@ -202,34 +219,11 @@ def save_contrast_limits(output_file: Path, ab_list_path=Path(), name=""):
     with open(output_file / f"{name}.txt", "w") as output:
         output.write(str(contrast_limit))
 
-def get_shape_layers() -> list:
-    """Helper function to get current shape layer names"""
-    return [layer.name for layer in viewer.layers if isinstance(layer, Shapes)]
-
-@magicgui(
-    call_button='Save shape array',
-    layout='vertical',
-    output_file={"mode": "d"},
-    shape_name={"widget_type": "ComboBox", "choices": get_shape_layers}
-)
-def save_shapes(output_file: Path, shape_name: str = ""):
-    """Save shape coordinates to text file"""
-    try:
-        if not shape_name:
-            show_info("Please select a shapes layer")
-            return
-            
-        layer = viewer.layers[shape_name]
-        shapes = layer.data
-        
-        output_path = output_file / f"{shape_name}_shapes.txt"
-        with open(output_path, 'w') as f:
-            f.write(str([arr.tolist() for arr in shapes]))  # Convert numpy arrays to lists
-            
-        show_info(f"Saved {len(shapes)} shapes to:\n{output_path.name}")
-        
-    except Exception as e:
-        show_info(f"Error saving shapes: {str(e)}")
+@magicgui(call_button='Save shape array', layout='vertical', output_file={"mode": "d"})
+def save_shapes(output_file: Path, shape_name=""):
+    shapes = viewer.layers[shape_name].data
+    with open(output_file / f"{shape_name}.txt", 'w') as output:
+        output.write(str(shapes))
 
 @magicgui(call_button='Cut and Save ROIs', filepath={"mode": "d"})
 def cut_mask(filepath: Path, shape_name=""):
@@ -446,6 +440,257 @@ def save_viewport(
     except Exception as e:
         show_info(f"Error saving viewport: {str(e)}")
 
+@magicgui(call_button='Load Points', layout='vertical', points_path={"mode": "r", "filter": "*.csv"})
+def load_points(points_path: Path):
+    """Load sampling points layer from CSV"""
+    try:
+        # Read CSV with points data
+        points_df = pd.read_csv(points_path)
+        
+        # Validate required columns
+        if not {'x', 'y'}.issubset(points_df.columns):
+            show_info("CSV must contain 'x' and 'y' columns")
+            return
+
+        # Extract coordinates and optional properties
+        points_data = points_df[['x', 'y']].values
+        properties = {
+            'label': points_df['label'].tolist() if 'label' in points_df.columns else None
+        }
+
+        # Create points layer with optional text labels
+        points_layer = viewer.add_points(
+            points_data,
+            name=points_path.stem,
+            size=10,
+            face_color='magenta',
+            edge_color='black',
+            properties=properties,
+            text='label' if 'label' in points_df.columns else None
+        )
+
+        # Set initial visibility settings
+        points_layer.visible = True
+        show_info(f"Loaded {len(points_data)} points from {points_path.name}")
+
+    except Exception as e:
+        show_info(f"Error loading points: {str(e)}")
+
+
+
+
+# -------------------------------------------------------------------------------
+# Widget implementations - Circle with n cells
+# -------------------------------------------------------------------------------
+
+def circle_coordinates(cx, cy, radius, num_points=100):
+    angles = np.linspace(0, 2*np.pi, num_points, endpoint=False)
+    x = cx + radius * np.cos(angles)
+    y = cy + radius * np.sin(angles)
+    return np.column_stack([x, y])
+
+@magicgui(
+    call_button='Create circle',
+    layout='vertical',
+    center_x={'min': -1e9, 'max': 1e9, 'step': 1},
+    center_y={'min': -1e9, 'max': 1e9, 'step': 1},
+    num_cells={'min': 1, 'max': 1e7, 'step': 1},
+)
+def create_circle_for_n_cells(
+    cell_info_csv: Path = None,
+    center_x: float = 0.0,
+    center_y: float = 0.0,
+    shape_name: str = "circle_auto",
+    num_cells: int = 1000
+):
+    """Create a circle that contains exactly n cells from the CSV data"""
+    if cell_info_csv is None or not cell_info_csv.is_file():
+        show_info(f"CSV file not found: {cell_info_csv}")
+        return
+    
+    try:
+        df = pd.read_csv(cell_info_csv)
+    except Exception as e:
+        show_info(f"Error reading CSV: {e}")
+        return
+
+    possible_x_cols = ['X_centroid','x','X']
+    possible_y_cols = ['Y_centroid','y','Y']
+    
+    x_col, y_col = None, None
+    for c in possible_x_cols:
+        if c in df.columns:
+            x_col = c
+            break
+    for c in possible_y_cols:
+        if c in df.columns:
+            y_col = c
+            break
+
+    if x_col is None or y_col is None:
+        show_info("No X,Y coordinate columns found in CSV.")
+        return
+
+    df['dist_to_center'] = np.sqrt((df[x_col] - center_x)**2 + (df[y_col] - center_y)**2)
+    df_sorted = df.sort_values(by='dist_to_center')
+    
+    total_cells = len(df_sorted)
+    target_num = min(num_cells, total_cells)
+    if target_num < 1:
+        show_info("Not enough cells or invalid cell number requested.")
+        return
+    
+    distance_target = df_sorted.iloc[target_num - 1]['dist_to_center']
+    circle_pts = circle_coordinates(cx=center_x, cy=center_y, radius=distance_target)
+
+    existing_layer_names = [layer.name for layer in viewer.layers]
+    final_name = shape_name
+    if final_name in existing_layer_names:
+        final_name += "_new"
+    
+    viewer.add_shapes(
+        data=[circle_pts],
+        shape_type='polygon',
+        edge_color='yellow',
+        face_color='blue',
+        opacity=0.3,
+        name=final_name
+    )
+
+    show_info(
+        f"Circle created around ({center_x:.2f}, {center_y:.2f}) with radius={distance_target:.2f}.\n"
+        f"Total cells included: {target_num} (of {total_cells})."
+    )
+
+# Button to pick center with click
+pick_center_button = PushButton(label="Pick center with click")
+
+def on_pick_center_click():
+    """Triggered when 'Pick center with click' button is pressed"""
+    show_info("Click on the image to select center...")
+
+    def get_click(layer, event):
+        """Callback that captures the first click and sets (center_x, center_y)"""
+        if event.type == 'mouse_press' and event.button == 1:
+            coords_world = event.position
+            coords_data = layer.world_to_data(coords_world)
+            
+            x_clicked, y_clicked = coords_data
+            create_circle_for_n_cells.center_x.value = x_clicked
+            create_circle_for_n_cells.center_y.value = y_clicked
+
+            show_info(f"Coordinates set: X={x_clicked:.2f}, Y={y_clicked:.2f}")
+            layer.mouse_drag_callbacks.remove(get_click)
+
+    if len(viewer.layers) > 0:
+        image_layer = viewer.layers[0]
+        image_layer.mouse_drag_callbacks.append(get_click)
+    else:
+        show_info("No layers available to detect click.")
+
+pick_center_button.changed.connect(on_pick_center_click)
+
+# Create a container widget for both the main widget and the button
+def create_circle_widget():
+    container = QWidget()
+    layout = QVBoxLayout()
+    container.setLayout(layout)
+    
+    layout.addWidget(create_circle_for_n_cells.native)
+    layout.addWidget(pick_center_button)
+    
+    return container
+
+
+
+@magicgui(
+    call_button='Exportar células en Shape',
+    layout='vertical',
+    shape_layer={
+        'label': 'Capa Shape',
+        'choices': lambda _: [layer.name for layer in viewer.layers if isinstance(layer, napari.layers.Shapes)]
+    },
+    sample_name={
+        'label': 'Nombre de muestra',
+        'choices': lambda w: get_unique_samples(w.cell_info_csv.value)
+    },
+    output_dir={'label': 'Directorio de salida', 'mode': 'd'}
+)
+def export_cells_in_shape(
+    cell_info_csv: Path = Path(''),
+    shape_layer: str = '',
+    sample_name: str = '',
+    output_dir: Path = Path('.')
+):
+    """Exporta células dentro de una shape especificada"""
+    # Validar inputs
+    if not cell_info_csv.exists():
+        show_info("Error: Archivo CSV no encontrado")
+        return
+    
+    if not shape_layer or shape_layer not in viewer.layers:
+        show_info("Error: Capa shape no válida")
+        return
+    
+    try:
+        # Leer CSV
+        df = pd.read_csv(cell_info_csv)
+        
+        # Validar columnas requeridas
+        required_columns = ['X_centroid', 'Y_centroid', 'Sample', 'CellID']
+        if not all(col in df.columns for col in required_columns):
+            show_info(f"Error: CSV debe contener columnas: {', '.join(required_columns)}")
+            return
+            
+        # Filtrar por muestra
+        sample_df = df[df['Sample'] == sample_name]
+        
+        if sample_df.empty:
+            show_info(f"No se encontraron células para la muestra: {sample_name}")
+            return
+            
+        # Obtener shape layer
+        shape = viewer.layers[shape_layer]
+        
+        # Convertir coordenadas a array numpy
+        points = sample_df[['X_centroid', 'Y_centroid']].values
+        
+        # Verificar qué puntos están dentro del shape
+        inside = shape.contains(points, world=False)
+        
+        # Filtrar células dentro del shape
+        cells_in_shape = sample_df[inside]
+        
+        if cells_in_shape.empty:
+            show_info("No se encontraron células dentro del área seleccionada")
+            return
+            
+        # Crear nombre de archivo
+        output_path = output_dir / f"cells_in_{shape_layer}_{sample_name}.csv"
+        
+        # Guardar resultados
+        cells_in_shape.to_csv(output_path, index=False)
+        
+        show_info(f"Exportadas {len(cells_in_shape)} células\nGuardado en: {output_path}")
+
+    except Exception as e:
+        show_info(f"Error: {str(e)}")
+
+def get_unique_samples(csv_path: Path) -> list:
+    """Obtiene muestras únicas del CSV"""
+    if csv_path.is_file():
+        try:
+            df = pd.read_csv(csv_path)
+            if 'Sample' in df.columns:
+                return sorted(df['Sample'].unique().tolist())
+        except:
+            return []
+    return []
+
+
+
+
+
 # -------------------------------------------------------------------------------
 # Final configuration
 # -------------------------------------------------------------------------------
@@ -462,17 +707,18 @@ widget_map = {
     "Export cells": save_selected_cells,
     "Metadata": view_metadata,
     "Voronoi": voronoi_plot,
-    "Save Viewport": save_viewport  # Added entry, experimental
+    "Load points": load_points,
+    "Save Viewport": save_viewport,
     "Close all": close_all,
-    
+    "Circle with n cells": create_circle_widget,  # Note: Now using the container widget
+    "Export cells in shape": export_cells_in_shape
 }
-
 
 # 2. Define tab configuration
 tab_config = {
-    "Input": ["Open image", "Open mask", "Load shapes"],
-    "Analysis": ["Count cells", "Metadata", "Voronoi"],
-    "Export": ["Contrast limits", "Save shapes", "Crop ROI", "Save Viewport", "Export cells"],
+    "Input": ["Open image", "Open mask", "Load shapes", "Load points"],
+    "Analysis": ["Count cells", "Metadata", "Voronoi", "Circle with n cells"],  # Added here
+    "Export": ["Contrast limits", "Save shapes", "Crop ROI", "Save Viewport", "Export cells", "Export cells in shape"],
     "Tools": ["Close all"]
 }
 
@@ -486,12 +732,21 @@ for tab_name, widgets in tab_config.items():
     
     if tab_widgets:
         for widget in tab_widgets:
-            viewer.window.add_dock_widget(
-                widget,
-                name=tab_name,
-                area='right',
-                allowed_areas=['right', 'left']
-            )
+            # Special handling for the circle widget which is already a container
+            if w == "Circle with n cells":
+                viewer.window.add_dock_widget(
+                    widget(),
+                    name="Circle with n cells",
+                    area='right',
+                    allowed_areas=['right', 'left']
+                )
+            else:
+                viewer.window.add_dock_widget(
+                    widget,
+                    name=widget.__name__,
+                    area='right',
+                    allowed_areas=['right', 'left']
+                )
 
 @magicgui(call_button='⚙️ Configure Widgets')
 def config_widgets():
