@@ -82,3 +82,15 @@ sudo docker run \
   --mount type=bind,source="/media/cruz-osuna/Mice/CycIF_mice_4NQO/00_Illumination_correction/Output",target=/data/output \
   --mount type=bind,source="$(pwd)",target=/scripts \
   mybasic-image /scripts/BaSiC_run.sh
+
+
+# Temp try t-CycIF MX
+
+  sudo docker run \
+  --privileged -it -m 25g --cpus=14 \
+  -u $(id -u):$(id -g) \
+  --mount type=bind,source="/media/cruz/TOSHIBA EXT1",target=/mnt/external \
+  --mount type=bind,source="/media/cruz/TOSHIBA EXT1/BMF/ENSAYO CycIF INCAN/01_Registration",target=/data/input \
+  --mount type=bind,source="/media/cruz/TOSHIBA EXT1/BMF/ENSAYO CycIF INCAN/00_Illumination_correction",target=/data/output \
+  --mount type=bind,source="$(pwd)",target=/scripts \
+  mybasic-image /scripts/BaSiC_run.sh

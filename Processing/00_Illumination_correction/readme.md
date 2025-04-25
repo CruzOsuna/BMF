@@ -37,6 +37,10 @@ docker build -t mybasic-image .
 
 ## Running Illumination Correction
 
+Specifies the file format to be processed in the “BaSiC_run.sh” script, as follows: “rcpnl” or ‘czi’. 
+(Only these two formats are supported).
+![Example](https://github.com/CruzOsuna/BMF/blob/main/workflow.png)
+
 ### 1. Using an External Device
 Run the following command, replacing the placeholders with appropriate values:
 ```bash

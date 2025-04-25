@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# export _JAVA_OPTIONS="-Xms8g -Xmx8g" # RAM reduction to 25gb
+export _JAVA_OPTIONS="-Xms25g -Xmx25g" # RAM 
 
 # Define paths and file type
-MY_PATH="/data/input/"
-OUTPUT_PATH="/data/output"
-FILE_TYPE="rcpnl"
+MY_PATH="/data/input/"     # Do not modify this path, indicate the path in the “sudo docker run...” command. 
+OUTPUT_PATH="/data/output" # Do not modify this path, indicate the path in the “sudo docker run...” command. 
+FILE_TYPE="czi"   # Enter here the file format to be processed, either “czi” or “rcpnl”.
 
 # Function to execute the ImageJ command
 BaSiC_call() {
