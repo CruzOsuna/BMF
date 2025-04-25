@@ -5,11 +5,12 @@ import multiprocessing
 from os import listdir
 from os.path import join, exists, basename, splitext, isfile
 import subprocess
+from tqdm import tqdm
 
 # ----------------- Configuration (Update these paths) -----------------
-my_path = "/media/cruz/Spatial/CycIF_human_2024/1_Registration/RCPNLS/Done"
-output_path = "/media/cruz/Spatial/CycIF_human_2024/2_Visualization/t-CycIF/Images_illumination-corrected"
-illumination_base = "/media/cruz/Spatial/CycIF_human_2024/0_Illumination_correction/output"
+my_path = "/media/cruz/Spatial/t-CycIF_human_2025/01_Registration/RCPNLS"
+output_path = "/media/cruz/Spatial/t-CycIF_human_2025/02_Visualization/t-CycIF/Images_IC"
+illumination_base = "/media/cruz/Spatial/t-CycIF_human_2025/00_Illumination_correction/output"
 # -----------------------------------------------------------------------
 
 file_type = 'rcpnl'
@@ -30,6 +31,12 @@ def find_matching_illumination(rcpnl_path, illu_folder):
 def process_subfolder(subfolder, output_root, illumination_root):
     """Process one sample subfolder"""
     name = basename(subfolder)
+    output_file = join(output_root, f"{name}.ome.tif")
+    
+    if exists(output_file):
+        print(f"Skipping {name}, output already exists.")
+        return
+    
     print(f"\n🔍 Processing: {name}")
     
     # Get RCPNL files
@@ -40,7 +47,7 @@ def process_subfolder(subfolder, output_root, illumination_root):
     )
     
     if not rcpnl_files:
-        print(f"⚠️ No .rcpnl files in {name}")
+        print(f"No .rcpnl files in {name}")
         return
 
     # Get illumination files
@@ -54,16 +61,15 @@ def process_subfolder(subfolder, output_root, illumination_root):
                     ffp_files.append(ffp)
                     dfp_files.append(dfp)
                 else:
-                    print(f"⚠️ Missing illumination for {basename(rcpnl)}")
+                    print(f"Missing illumination for {basename(rcpnl)}")
             # Validate counts
             if len(ffp_files) != len(rcpnl_files) or len(dfp_files) != len(rcpnl_files):
-                print(f"❌ Illumination mismatch in {name}. Skipping correction.")
+                print(f"Illumination mismatch in {name}. Skipping correction.")
                 ffp_files, dfp_files = [], []
         else:
-            print(f"⚠️ No illumination folder for {name}")
+            print(f"No illumination folder for {name}")
 
     # Build Ashlar command
-    output_file = join(output_root, f"{name}.ome.tif")
     cmd = [
         "ashlar",
         *rcpnl_files,
@@ -74,18 +80,18 @@ def process_subfolder(subfolder, output_root, illumination_root):
     if ffp_files and dfp_files:
         cmd += ["--ffp", *ffp_files, "--dfp", *dfp_files]
 
-    print("\n🚀 Command:", " ".join(cmd))
+    print("\n Command:", " ".join(cmd))
     
     # Execute
     try:
         result = subprocess.run(
             cmd, check=True, capture_output=True, text=True
         )
-        print(f"✅ Success: {name}\n{result.stdout}")
+        print(f"Success: {name}\n{result.stdout}")
     except subprocess.CalledProcessError as e:
-        print(f"❌ Failed: {name}\nError: {e.stderr}")
+        print(f"Failed: {name}\nError: {e.stderr}")
     except Exception as e:
-        print(f"💥 Crash: {name}\n{str(e)}")
+        print(f"Crash: {name}\n{str(e)}")
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -97,8 +103,20 @@ if __name__ == '__main__':
 
     print(f"Found {len(subfolders)} samples to process")
     
+    # Create a list of tasks for progress tracking
+    tasks = [(sf, output_path, illumination_base) for sf in subfolders]
+    
+    # Process with progress bar
     with multiprocessing.Pool(args.threads) as pool:
-        tasks = [(sf, output_path, illumination_base) for sf in subfolders]
-        pool.starmap(process_subfolder, tasks)
+        # Using tqdm to show progress
+        list(tqdm(
+            pool.imap_unordered(
+                lambda x: process_subfolder(*x), 
+                tasks
+            ),
+            total=len(tasks),
+            desc="Processing samples",
+            unit="sample"
+        ))
 
-    print("\n🏁 All processing complete!") 
+    print("\n🏁 All processing complete!")

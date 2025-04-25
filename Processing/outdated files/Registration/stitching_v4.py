@@ -7,9 +7,9 @@ from os.path import join, exists, basename, splitext, isfile
 import subprocess
 
 # ----------------- Configuration (Update these paths) -----------------
-my_path = "/media/cruz/Spatial/CycIF_human_2024/1_Registration/RCPNLS/Done"
-output_path = "/media/cruz/Spatial/CycIF_human_2024/2_Visualization/t-CycIF/Images_illumination-corrected"
-illumination_base = "/media/cruz/Spatial/CycIF_human_2024/0_Illumination_correction/output"
+my_path = "/media/cruz/Spatial/t-CycIF_human_2025/01_Registration/RCPNLS"
+output_path = "/media/cruz/Spatial/t-CycIF_human_2025/02_Visualization/t-CycIF/Images_IC"
+illumination_base = "/media/cruz/Spatial/t-CycIF_human_2025/00_Illumination_correction/output"
 # -----------------------------------------------------------------------
 
 file_type = 'rcpnl'
@@ -30,6 +30,12 @@ def find_matching_illumination(rcpnl_path, illu_folder):
 def process_subfolder(subfolder, output_root, illumination_root):
     """Process one sample subfolder"""
     name = basename(subfolder)
+    output_file = join(output_root, f"{name}.ome.tif")
+    
+    if exists(output_file):
+        print(f"⏩ Skipping {name}, output already exists.")
+        return
+    
     print(f"\n🔍 Processing: {name}")
     
     # Get RCPNL files
@@ -63,7 +69,6 @@ def process_subfolder(subfolder, output_root, illumination_root):
             print(f"⚠️ No illumination folder for {name}")
 
     # Build Ashlar command
-    output_file = join(output_root, f"{name}.ome.tif")
     cmd = [
         "ashlar",
         *rcpnl_files,
@@ -101,4 +106,4 @@ if __name__ == '__main__':
         tasks = [(sf, output_path, illumination_base) for sf in subfolders]
         pool.starmap(process_subfolder, tasks)
 
-    print("\n🏁 All processing complete!") 
+    print("\n🏁 All processing complete!")
