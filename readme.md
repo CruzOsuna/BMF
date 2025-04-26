@@ -40,6 +40,9 @@ Generic readme file generated with IA, pending improvement and corrections.
 - [Conda/Miniconda](https://docs.conda.io/en/latest/miniconda.html)
 - Linux (recommended)
 
+*Verified support for Ubuntu 24.04.2 LTS
+*Windows support has not been verified for all scripts.
+
 ### 1. Illumination Correction
 ```bash
 # Add user to docker group
