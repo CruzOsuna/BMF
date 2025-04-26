@@ -541,12 +541,12 @@ def load_points(points_path: Path):
         points_df = pd.read_csv(points_path)
         
         # Validate required columns
-        if not {'x', 'y'}.issubset(points_df.columns):
+        if not {'center_x', 'center_y'}.issubset(points_df.columns):
             show_info("CSV must contain 'x' and 'y' columns")
             return
 
         # Extract coordinates and optional properties
-        points_data = points_df[['x', 'y']].values
+        points_data = points_df[['center_x', 'center_y']].values
         properties = {
             'label': points_df['label'].tolist() if 'label' in points_df.columns else None
         }
