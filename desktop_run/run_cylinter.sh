@@ -16,20 +16,20 @@ read -p "Enter the option number: " option
 
 case $option in
     1)
-        echo "Running Cylinter with 4NQO..."
+        echo "Running Cylinter with Mice 4NQO..."
         cylinter /media/cruz/Mice/CycIF_mice_4NQO/5_QC/Cylinter/INPUT_DIR/cylinter_config.yml
         ;;
     2)
-        echo "Running Cylinter with P53..."
+        echo "Running Cylinter with Mice P53..."
         cylinter /media/cruz/Mice/CycIF_mice_4NQO/5_QC/Cylinter/INPUT_DIR/cylinter_config.yml
         ;;
     3)
-        echo "Running Cylinter with P53..."
-        cylinter /media/cruz/Spatial/CycIF_mice_4NQO/5_QC/Cylinter/INPUT_DIR/cylinter_config.yml
+        echo "Running Cylinter with Human 2024."
+        cylinter /media/cruz/Spatial/CycIF_human_2024/5_QC/Cylinter/INPUT_DIR/cylinter_config.yml
         ;;
     4)
-        echo "Running Cylinter with P53..."
-        cylinter /media/cruz/Spatial/CycIF_mice_4NQO/5_QC/Cylinter/INPUT_DIR/cylinter_config.yml
+        echo "Running Cylinter with Human 2025..."
+        cylinter /media/cruz/Spatial/CycIF_human_2024/5_QC/Cylinter/INPUT_DIR/cylinter_config.yml
         ;;
     *)
         echo "Invalid option. Exiting..."
