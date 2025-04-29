@@ -112,7 +112,7 @@ viewer = napari.Viewer()
 def open_large_image(image_path: Path = Path("."), 
                     contrast_limit_txt: Path = None,
                     ab_list_path: Path = None):
-    """Open a multichannel image with optional parameters"""
+    """Open a multichannel image with pyramidal handling"""
     try:
         if not image_path.is_file():
             show_info("Please select a valid image file")
@@ -154,13 +154,29 @@ def open_large_image(image_path: Path = Path("."),
 
             # Load image data
             if is_pyramidal:
-                pyramid = [da.from_zarr(zarr.open(tf.aszarr(level=i))) for i in range(len(series.levels))]
+                pyramid = [da.from_zarr(zarr.open(tf.aszarr(level=i))) 
+                          for i in range(len(series.levels))]
             else:
                 pyramid = [da.from_zarr(zarr.open(tf.aszarr()))]
 
             # Add channel dimension if missing
             if 'C' not in axes:
                 pyramid = [level[np.newaxis, ...] for level in pyramid]
+
+            # Auto-generate pyramid for large non-pyramidal images
+            if not is_pyramidal:
+                base_level = pyramid[0]
+                base_height = base_level.shape[-2]
+                base_width = base_level.shape[-1]
+                
+                # Generate pyramid if dimensions exceed GPU texture limits
+                if base_height > 16384 or base_width > 16384:
+                    current_level = base_level
+                    while any(dim > 4096 for dim in current_level.shape[-2:]):
+                        next_level = current_level[..., ::2, ::2]  # 2x2 binning
+                        pyramid.append(next_level)
+                        current_level = next_level
+                    is_pyramidal = True
 
             # Generate automatic channel names if needed
             if not channel_names:
@@ -176,14 +192,15 @@ def open_large_image(image_path: Path = Path("."),
             multiscale=is_pyramidal
         )
 
-        show_info(f"Image loaded: {image_path.name}\nChannels: {len(channel_names)}")
+        show_info(f"Image loaded: {image_path.name}\n" 
+                 f"Dimensions: {pyramid[0].shape}\n"
+                 f"Pyramid levels: {len(pyramid)}")
 
     except Exception as e:
         show_info(f"Critical error: {str(e)}")
 
-
 # -------------------------------------------------------------------------------
-# Widget implementations - Extract Cells in Shape
+# Widget implementations - Open Mask
 # -------------------------------------------------------------------------------
 
 @magicgui(call_button='Open mask', layout='vertical')
@@ -195,7 +212,7 @@ def open_mask(mask_path=Path()):
 
 
 # -------------------------------------------------------------------------------
-# Widget implementations - Extract Cells in Shape
+# Widget implementations - Load Shapes
 # -------------------------------------------------------------------------------
 
 @magicgui(call_button='Load Shapes', layout='vertical', shapes_path={"mode": "d"})
@@ -207,17 +224,21 @@ def load_shapes(shapes_path: Path):
         return
         
     for filename in shapes_path.glob("*.txt"):
+        if filename.name.startswith('._'):  # Skip hidden files
+            continue
         try:
             with open(filename, 'r') as f:
                 content = f.read()
             
             # Use regex to parse numpy array syntax
-            match = re.search(r'array\((.*?),\s*dtype=(\w+)\)', content, re.DOTALL)
+            match = re.search(r'array\(([\s\S]*?)(?:,\s*dtype=(\w+))?\)', content, re.DOTALL)
             if not match:
                 raise ValueError("Invalid numpy array format")
             
-            array_str, dtype_str = match.groups()
-            array_data = ast.literal_eval(array_str.strip())
+            array_str = match.group(1).strip()
+            dtype_str = match.group(2) if match.group(2) else 'float32'  # Default dtype
+            
+            array_data = ast.literal_eval(array_str)
             shape_array = np.array(array_data, dtype=getattr(np, dtype_str))
             
             viewer.add_shapes(
@@ -225,7 +246,7 @@ def load_shapes(shapes_path: Path):
                 shape_type='polygon',
                 edge_width=1,
                 edge_color='#777777',
-                face_color='transparent',
+                face_color='red',
                 name=filename.stem
             )
             
@@ -233,9 +254,8 @@ def load_shapes(shapes_path: Path):
             show_info(f"Error loading {filename.name}:\n{str(e)}")
 
 
-
 # -------------------------------------------------------------------------------
-# Widget implementations - Extract Cells in Shape
+# Widget implementations - Save contrast limits
 # -------------------------------------------------------------------------------
 
 
@@ -253,14 +273,15 @@ def save_contrast_limits(output_file: Path, ab_list_path=Path(), name=""):
 
 
 # -------------------------------------------------------------------------------
-# Widget implementations - Extract Cells in Shape
+# Widget implementations - Save Shape
 # -------------------------------------------------------------------------------
+
 
 @magicgui(call_button='Save shape array', layout='vertical', output_file={"mode": "d"})
 def save_shapes(output_file: Path, shape_name=""):
     shapes = viewer.layers[shape_name].data
     with open(output_file / f"{shape_name}.txt", 'w') as output:
-        output.write(str(shapes))
+        output.write(repr(shapes))  # Use repr to include dtype information
 
 
 
@@ -294,7 +315,7 @@ def cut_mask(filepath: Path, shape_name=""):
 
 
 # -------------------------------------------------------------------------------
-# Widget implementations - Extract Cells in Shape
+# Widget implementations - Close All
 # -------------------------------------------------------------------------------
 
 @magicgui(call_button='Close all', layout='vertical')
@@ -304,7 +325,7 @@ def close_all():
 
 
 # -------------------------------------------------------------------------------
-# Widget implementations - Extract Cells in Shape
+# Widget implementations - View metadata
 # -------------------------------------------------------------------------------
 
 @magicgui(call_button='View metadata', layout='vertical')
@@ -327,7 +348,7 @@ def view_metadata(adata_path=Path(), image_name="", metadata_column=""):
 
 
 # -------------------------------------------------------------------------------
-# Widget implementations - Extract Cells in Shape
+# Widget implementations - Count selected cells
 # -------------------------------------------------------------------------------
 
 @magicgui(call_button='Count selected cells', layout='vertical')
@@ -355,7 +376,7 @@ def count_selected_cells(shape_name: str = "", cell_info_csv: Path = Path()):
 
 
 # -------------------------------------------------------------------------------
-# Widget implementations - Extract Cells in Shape
+# Widget implementations - Save cells in selected ROI
 # -------------------------------------------------------------------------------
 
 @magicgui(call_button='Save cells in selected ROI', layout='vertical', output_csv={"mode": "d"})
@@ -406,7 +427,7 @@ def save_selected_cells(output_csv: Path, shape_name: str = "", cell_info_csv: P
 
 
 # -------------------------------------------------------------------------------
-# Widget implementations - Extract Cells in Shape
+# Widget implementations - Voronoi plot
 # -------------------------------------------------------------------------------
 
 @magicgui(call_button='Voronoi plot', layout='vertical', output_dir={"mode": "d"})
@@ -436,7 +457,7 @@ def voronoi_plot(output_dir: Path, adata_path=Path(), shape_name="", image_name=
 
 
 # -------------------------------------------------------------------------------
-# Widget implementations - Extract Cells in Shape
+# Widget implementations - Save Viewport
 # -------------------------------------------------------------------------------
 
 @magicgui(
@@ -530,7 +551,7 @@ def save_viewport(
 
 
 # -------------------------------------------------------------------------------
-# Widget implementations - Extract Cells in Shape
+# Widget implementations - Load Points
 # -------------------------------------------------------------------------------
 
 @magicgui(call_button='Load Points', layout='vertical', points_path={"mode": "r", "filter": "*.csv"})
@@ -541,12 +562,12 @@ def load_points(points_path: Path):
         points_df = pd.read_csv(points_path)
         
         # Validate required columns
-        if not {'center_x', 'center_y'}.issubset(points_df.columns):
+        if not {'x', 'y'}.issubset(points_df.columns):
             show_info("CSV must contain 'x' and 'y' columns")
             return
 
         # Extract coordinates and optional properties
-        points_data = points_df[['center_x', 'center_y']].values
+        points_data = points_df[['x', 'y']].values
         properties = {
             'label': points_df['label'].tolist() if 'label' in points_df.columns else None
         }
