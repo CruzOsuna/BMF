@@ -3,7 +3,6 @@
 [![Project Status: Active](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
 [![License](https://img.shields.io/badge/License-TBD-blue)](LICENSE)
 
-Generic readme file generated with IA, pending improvement and corrections.
 
 ![Pipeline Overview](https://github.com/CruzOsuna/BMF/blob/main/workflow.png)
 
@@ -26,7 +25,7 @@ Generic readme file generated with IA, pending improvement and corrections.
 2. **Image Registration**  
    Multi-cycle alignment with Ashlar workflow
 3. **Interactive Analysis**  
-   Napari Viewer with cell quantification and Voronoi tools
+   Napari Viewer with widgets
 4. **Stardist Segmentation**  
    Nuclear/cell segmentation with TensorFlow backend
 5. **Quantification**  
@@ -39,6 +38,8 @@ Generic readme file generated with IA, pending improvement and corrections.
 - [Docker](https://docs.docker.com/get-docker/)
 - [Conda/Miniconda](https://docs.conda.io/en/latest/miniconda.html)
 - Linux (recommended)
+
+Verified support for Ubuntu 24.04.2 LTS, Windows support has not been verified for all scripts.
 
 ### 1. Illumination Correction
 ```bash
