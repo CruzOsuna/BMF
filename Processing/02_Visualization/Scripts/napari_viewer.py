@@ -331,21 +331,56 @@ def close_all():
 @magicgui(call_button='View metadata', layout='vertical')
 def view_metadata(adata_path=Path(), image_name="", metadata_column=""):
     path = str(adata_path)
-    adata = sm.pp.mcmicro_to_scimap(path, remove_dna=False, remove_string_from_name=None, log=False,
-                                random_sample=None, CellId='CellID', split='X_centroid',
-                                custom_imageid=None, min_cells=None, output_dir=None)
+    
+    # Detect CellID column from raw data
+    cell_data_path = Path(path) / 'cells.csv'  # Adjust path if different
+    detected_cell_id = 'CellID'  # Default fallback
+    
+    if cell_data_path.exists():
+        try:
+            # Read just the header to check columns
+            df = pd.read_csv(cell_data_path, nrows=0)
+            # Find column name variations
+            for col in df.columns:
+                if col.lower().replace('_', '').replace('-', '') == 'cellid':
+                    detected_cell_id = col
+                    break
+        except Exception as e:
+            print(f"Error reading columns: {e}")
+    
+    # Load data with detected CellID column
+    adata = sm.pp.mcmicro_to_scimap(
+        path,
+        remove_dna=False,
+        remove_string_from_name=None,
+        log=False,
+        random_sample=None,
+        CellId=detected_cell_id,  # Use detected column name
+        split='X_centroid',
+        custom_imageid=None,
+        min_cells=None,
+        output_dir=None
+    )
+    
+    # Rest of the processing remains the same
     adata = adata[adata.obs['imageid'] == image_name]
     available_phenotypes = list(adata.obs[metadata_column].unique())
+    
     for i in available_phenotypes:
         coordinates = adata[adata.obs[metadata_column] == i]
-        coordinates = pd.DataFrame({'y': coordinates.obs["Y_centroid"], 'x': coordinates.obs["X_centroid"]})
+        coordinates = pd.DataFrame({
+            'y': coordinates.obs["Y_centroid"],
+            'x': coordinates.obs["X_centroid"]
+        })
         points = coordinates.values
         r = lambda: random.randint(0, 255)
         point_color = '#%02X%02X%02X' % (r(), r(), r())
-        viewer.add_points(points, size=25, face_color=point_color, visible=False, name=i)
+        viewer.add_points(points, size=25, face_color=point_color, 
+                        visible=False, name=i)
 
 
-
+# Modified to accept more column "CellID" names
+# Cruz Osuna
 
 # -------------------------------------------------------------------------------
 # Widget implementations - Count selected cells
