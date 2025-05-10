@@ -1,0 +1,38 @@
+from PIL import Image
+import sys
+
+def convert_png_to_tiff(input_path, output_path):
+    try:
+        # Open the PNG image
+        with Image.open(input_path) as img:
+            # Convert to RGB mode if necessary (to ensure 3 channels)
+            if img.mode in ('RGBA', 'LA'):
+                # Create a white background and paste the image
+                background = Image.new('RGB', img.size, (255, 255, 255))
+                background.paste(img, mask=img.split()[-1])  # Use alpha channel as mask
+                img = background
+            elif img.mode != 'RGB':
+                img = img.convert('RGB')
+            
+            # Save as TIFF with 3 channels
+            img.save(output_path, format='TIFF', compression='tiff_deflate')
+            
+        print(f"Successfully converted {input_path} to {output_path}")
+        return True
+    
+    except Exception as e:
+        print(f"Error: {str(e)}")
+        return False
+
+if __name__ == "__main__":
+    if len(sys.argv) != 3:
+        print("Usage: python convert.py input.png output.tif")
+        sys.exit(1)
+    
+    input_file = sys.argv[1]
+    output_file = sys.argv[2]
+    
+    if not input_file.lower().endswith('.png'):
+        print("Warning: Input file should be a PNG image")
+    
+    convert_png_to_tiff(input_file, output_file)

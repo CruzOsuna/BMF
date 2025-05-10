@@ -22,9 +22,15 @@ git push origin main
 git pull origin main
 
 
+- Para hacer la fusión de los cambios remotos con tus cambios locales:
+
+git pull --no-rebase origin main
+
+
 - Configurar el dispositivo para utilizar autenticacion con SSH
 
-
 git remote set-url origin git@github.com:CruzOsuna/BMF_t-CyCIF.git
+
+
 
 (esto es para el caso de Cruz, sera diferente en tu dispositivo, cuenta de github y sistema operativo)

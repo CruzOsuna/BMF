@@ -11,16 +11,16 @@ import matplotlib.pyplot as plt
 # CONFIGURATION
 # ========================================================================
 RADIUS_STEP = 50  
-TIFF_ORIGINAL_PATH = "/media/cruz/Spatial/CycIF_human_2024/2_Visualization/t-CycIF/Images_IC/AGSCC_1.ome.tif"
+TIFF_ORIGINAL_PATH = "/media/HDD_1/BMF/FA/visualization/images/FAHNSCC_14.ome.tiff"
 X_RES = 1  # microns/pixel
 Y_RES = 1
 
 # Specify the path to the .csv file with Shannon index data
-RESULTS_CSV = "/media/HDD_1/BMF/Spatial_sampling/Output/AGSCC_1/shannon_index_AGSCC_1.csv"
+RESULTS_CSV = "/media/HDD_1/BMF/Spatial_sampling/Output/FAHNSCC_14/ripley_k_index_FAHNSCC_14.csv"
 
 def create_sampling_area():
     """Parse coordinates from a NumPy array formatted file."""
-    POLYGON_FILE = '/media/HDD_1/BMF/Spatial_sampling/Shapes/AGSCC_1/AGSCC_1_Carcinoma-Stroma.txt'
+    POLYGON_FILE = '/media/HDD_1/BMF/Spatial_sampling/Shapes/FAHNSCC_14/FAHNSCC_14_partial_S1.txt'
     with open(POLYGON_FILE, 'r') as f:
         content = f.read()
     
@@ -38,7 +38,7 @@ def generate_shannon_tiff(results_csv, step, output_dir, output_tiff_name):
     df = pd.read_csv(results_csv)
     sampling_area = create_sampling_area()
     points = df[['center_x', 'center_y']].values
-    values = df[f'step_{step}'].values
+    values = df[f'K_radius_{step}'].values
 
     print(f"Shannon values (min, max): {np.nanmin(values)}, {np.nanmax(values)}")
 
@@ -69,9 +69,9 @@ def generate_shannon_tiff(results_csv, step, output_dir, output_tiff_name):
 # Execution
 # ========================================================================
 if __name__ == "__main__":
-    SAMPLE_NAME = "AGSCC_1"
-    OUTPUT_DIR = "/media/HDD_1/BMF/Spatial_sampling/Output/AGSCC_1/"
-    OUTPUT_TIFF_NAME = f'shannon_map_{SAMPLE_NAME}_step_{RADIUS_STEP}.tif'
+    SAMPLE_NAME = "FAHNSCC_14"
+    OUTPUT_DIR = "/media/HDD_1/BMF/Spatial_sampling/Output/FAHNSCC_14/"
+    OUTPUT_TIFF_NAME = f'ripley_k_map_{SAMPLE_NAME}_step_{RADIUS_STEP}.tif'
     
     # Use the RESULTS_CSV variable defined above
     generate_shannon_tiff(RESULTS_CSV, RADIUS_STEP, OUTPUT_DIR, OUTPUT_TIFF_NAME)

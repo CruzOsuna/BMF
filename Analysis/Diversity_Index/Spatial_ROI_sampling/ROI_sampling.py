@@ -9,12 +9,14 @@ from numba import njit, config
 from scipy.spatial import KDTree
 from concurrent.futures import ProcessPoolExecutor
 from multiprocessing import shared_memory
+from itertools import combinations
+
+# Author: Cruz Osuna (cruzosuna2003@gmail.com)
 
 # ========================================================================
 # CONFIGURATION
 # ========================================================================
-
-config.THREADING_LAYER = 'omp'  # OpenMP threading configuration
+config.THREADING_LAYER = 'omp'
 
 # Configuration parameters
 USE_LINE_BUFFER = False
@@ -26,25 +28,36 @@ MAX_STEPS = 100
 # Metric selection
 METRICS = {
     1: "Shannon",
-    2: "Ripley_K"
+    2: "Ripley_K",
+    3: "Phenotypic_Proportion",
+    4: "Spatial_Cooccurrence",
+    5: "Simpson"  # New entry
 }
-selected = int(input("Choose metric to calculate:\n1) Shannon Index\n2) Ripley K Function\nOption: "))
+
+# User prompt
+selected = int(input("\nChoose metric to calculate:\n"
+                     "1) Shannon Index\n"
+                     "2) Ripley K Function\n"
+                     "3) Phenotypic Proportion\n"
+                     "4) Spatial Co-occurrence\n"
+                     "5) Simpson Index\n"  
+                     "Option: "))
 METRIC = METRICS[selected]
 print(f"\nCalculating metric: {METRIC}\n")
 
-# Input files
-LINE_FILE = '/media/HDD_1/ROI_Sampling-benchmark/input/line_try-3.txt'
-POLYGON_FILE = '/media/HDD_1/ROI_Sampling-benchmark/input/Square_3.txt'
-CELLS_FILE = '/media/HDD_1/ROI_Sampling-benchmark/input/aggregated_data.csv'
+# Input files (paths shortened for readability)
+LINE_FILE = '/media/HDD_1/.../line_try-3.txt'
+POLYGON_FILE = '/media/HDD_1/BMF/Spatial_sampling/Shapes/FAHNSCC_14/FAHNSCC_14_partial_S1.txt'
+CELLS_FILE = '/media/HDD_1/BMF/Spatial_sampling/Cell_data/FAHNSCC_14_phenotype_annotated.csv'
 SAMPLE_NAME = 'FAHNSCC_14'
 
 # Output files
-OUTPUT_DIR = '/media/HDD_1/ROI_Sampling-benchmark/output'
+OUTPUT_DIR = '/media/HDD_1/BMF/Spatial_sampling/Output/FAHNSCC_14/'
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 POINTS_LAYER_FILE = f'sampling_points_{SAMPLE_NAME}.csv'
 
 # ========================================================================
-# SAMPLING AREA CREATION FUNCTION
+# GEOMETRY FUNCTIONS (UNCHANGED)
 # ========================================================================
 
 def create_sampling_area():
@@ -62,20 +75,6 @@ def create_sampling_area():
         numbers = list(map(float, re.findall(r'\d+\.\d+', content)))
         coords = list(zip(numbers[::2], numbers[1::2]))
         return Polygon(coords)
-
-# ========================================================================
-# NAPARI POINTS LAYER SAVER
-# ========================================================================
-
-def save_napari_points_layer(centroids, filename):
-    """Save centroids in Napari-compatible CSV format"""
-    df = pd.DataFrame(centroids, columns=['center_x', 'center_y'])
-    df['name'] = [f'centroid_{i}' for i in range(len(df))]
-    df.to_csv(filename, index=False)
-
-# ========================================================================
-# VECTORIZED RANDOM POINT GENERATOR
-# ========================================================================
 
 def generate_random_points(polygon, num_points):
     """Generate random points within polygon using vectorized GeoPandas checks."""
@@ -104,12 +103,12 @@ def generate_random_points(polygon, num_points):
     return points
 
 # ========================================================================
-# OPTIMIZED CENTROID PROCESSING FUNCTION
+# OPTIMIZED PROCESSING FUNCTIONS 
 # ========================================================================
 
 @njit
-def process_centroid(cx, cy, cell_coords, phenotypes, indices, step_size, max_steps, max_phenotype, metric):
-    """Process centroid for selected metric"""
+def process_shannon(cx, cy, cell_coords, phenotypes, indices, step_size, max_steps, max_phenotype):
+    """Calculate Shannon Index with consistent return type"""
     subset_coords = cell_coords[indices]
     dx = subset_coords[:, 0] - cx
     dy = subset_coords[:, 1] - cy
@@ -117,49 +116,223 @@ def process_centroid(cx, cy, cell_coords, phenotypes, indices, step_size, max_st
     sorted_idx = np.argsort(squared_distances)
     sorted_sq_dist = squared_distances[sorted_idx]
     
-    if metric == "Shannon":
-        subset_pheno = phenotypes[indices]
-        sorted_pheno = subset_pheno[sorted_idx]
-        results = np.zeros(max_steps)
-        cumulative_counts = np.zeros(max_phenotype + 1, dtype=np.int32)
-        last_idx = 0
-        
-        for step in range(max_steps):
-            current_radius = step_size * (step + 1)
-            sq_radius = current_radius ** 2
-            current_idx = np.searchsorted(sorted_sq_dist, sq_radius, side='right')
-            new_pheno = sorted_pheno[last_idx:current_idx]
-            
-            counts = np.bincount(new_pheno, minlength=max_phenotype+1)
-            cumulative_counts += counts
-            last_idx = current_idx
-            
-            total = cumulative_counts.sum()
-            if total == 0:
-                results[step] = 0.0
-                continue
-                
-            proportions = cumulative_counts[cumulative_counts > 0] / total
-            results[step] = -np.sum(proportions * np.log(proportions))
-            
-        return results
+    subset_pheno = phenotypes[indices]
+    sorted_pheno = subset_pheno[sorted_idx]
+    results = np.zeros(max_steps, dtype=np.float32)
+    cumulative_counts = np.zeros(max_phenotype + 1, dtype=np.int32)
+    last_idx = 0
     
-    elif metric == "Ripley_K":
-        results = np.zeros(max_steps)
-        area = np.pi * (step_size * np.arange(1, max_steps+1))**2
-        total_cells = len(subset_coords)
-        lambda_val = total_cells / (np.max(area) if total_cells > 0 else 1.0
+    for step in range(max_steps):
+        current_radius = step_size * (step + 1)
+        sq_radius = current_radius ** 2
+        current_idx = np.searchsorted(sorted_sq_dist, sq_radius, side='right')
+        new_pheno = sorted_pheno[last_idx:current_idx]
         
-        for step in range(max_steps):
-            current_radius = step_size * (step + 1)
-            current_idx = np.searchsorted(sorted_sq_dist, current_radius**2, side='right')
-            results[step] = current_idx / (lambda_val * area[step]) if lambda_val > 0 else 0
+        counts = np.bincount(new_pheno, minlength=max_phenotype+1)
+        cumulative_counts += counts
+        last_idx = current_idx
+        
+        total = cumulative_counts.sum()
+        if total == 0:
+            results[step] = 0.0
+            continue
             
-        return results
+        proportions = cumulative_counts[cumulative_counts > 0] / total
+        results[step] = -np.sum(proportions * np.log(proportions))
+        
+    return results.astype(np.float32)
+
+@njit
+def process_ripley(cx, cy, cell_coords, phenotypes, indices, step_size, max_steps, max_phenotype):
+    """Calculate Ripley K with consistent return type"""
+    subset_coords = cell_coords[indices]
+    dx = subset_coords[:, 0] - cx
+    dy = subset_coords[:, 1] - cy
+    squared_distances = dx**2 + dy**2
+    sorted_idx = np.argsort(squared_distances)
+    sorted_sq_dist = squared_distances[sorted_idx]
+    
+    results = np.zeros(max_steps, dtype=np.float32)
+    area = np.pi * (step_size * np.arange(1, max_steps+1, dtype=np.float32))**2
+    total_cells = len(subset_coords)
+    lambda_val = total_cells / (np.max(area) if total_cells > 0 else 1.0)
+    
+    for step in range(max_steps):
+        current_radius = step_size * (step + 1)
+        current_idx = np.searchsorted(sorted_sq_dist, current_radius**2, side='right')
+        results[step] = current_idx / (lambda_val * area[step]) if lambda_val > 0 else 0
+        
+    return results.astype(np.float32)
+
+
+
+@njit
+def process_phenotypic_proportion(cx, cy, cell_coords, phenotypes, indices, 
+                                step_size, max_steps, max_phenotype):
+    """Calculate phenotypic proportions with consistent return type"""
+    subset_coords = cell_coords[indices]
+    dx = subset_coords[:, 0] - cx
+    dy = subset_coords[:, 1] - cy
+    squared_distances = dx**2 + dy**2
+    sorted_idx = np.argsort(squared_distances)
+    sorted_sq_dist = squared_distances[sorted_idx]
+    
+    subset_pheno = phenotypes[indices]
+    sorted_pheno = subset_pheno[sorted_idx]
+    results = np.zeros((max_steps, max_phenotype + 1), dtype=np.float32)
+    last_idx = 0
+    
+    for step in range(max_steps):
+        current_radius = step_size * (step + 1)
+        sq_radius = current_radius ** 2
+        current_idx = np.searchsorted(sorted_sq_dist, sq_radius, side='right')
+        window_pheno = sorted_pheno[last_idx:current_idx]
+        
+        counts = np.bincount(window_pheno, minlength=max_phenotype+1)
+        total = len(window_pheno)
+        if total > 0:
+            results[step] = (counts / total).astype(np.float32)
+        last_idx = current_idx
+        
+    return results
+
+@njit
+def process_cooccurrence(cx, cy, cell_coords, phenotypes, indices, step_size, max_steps, max_phenotype):
+    """Calculate Co-occurrence with consistent return type"""
+    subset_coords = cell_coords[indices]
+    dx = subset_coords[:, 0] - cx
+    dy = subset_coords[:, 1] - cy
+    squared_distances = dx**2 + dy**2
+    sorted_idx = np.argsort(squared_distances)
+    sorted_sq_dist = squared_distances[sorted_idx]
+    
+    subset_pheno = phenotypes[indices]
+    sorted_pheno = subset_pheno[sorted_idx]
+    n_pheno = max_phenotype + 1
+    results = np.zeros((max_steps, n_pheno, n_pheno), dtype=np.float32)
+    last_idx = 0
+    
+    for step in range(max_steps):
+        current_radius = step_size * (step + 1)
+        sq_radius = current_radius ** 2
+        current_idx = np.searchsorted(sorted_sq_dist, sq_radius, side='right')
+        window_pheno = sorted_pheno[last_idx:current_idx]
+        
+        cooc_matrix = np.zeros((n_pheno, n_pheno), dtype=np.int32)
+        for i in range(len(window_pheno)):
+            for j in range(i+1, len(window_pheno)):
+                p1 = window_pheno[i]
+                p2 = window_pheno[j]
+                cooc_matrix[p1, p2] += 1
+                cooc_matrix[p2, p1] += 1
+        
+        total_pairs = len(window_pheno) * (len(window_pheno)-1) / 2
+        if total_pairs > 0:
+            results[step] = (cooc_matrix / total_pairs).astype(np.float32)
+            
+        last_idx = current_idx
+        
+    return results.astype(np.float32)
+
+@njit
+def process_simpson(cx, cy, cell_coords, phenotypes, indices, step_size, max_steps, max_phenotype):
+    """Calculate Simpson Index with consistent return type"""
+    subset_coords = cell_coords[indices]
+    dx = subset_coords[:, 0] - cx
+    dy = subset_coords[:, 1] - cy
+    squared_distances = dx**2 + dy**2
+    sorted_idx = np.argsort(squared_distances)
+    sorted_sq_dist = squared_distances[sorted_idx]
+    
+    subset_pheno = phenotypes[indices]
+    sorted_pheno = subset_pheno[sorted_idx]
+    results = np.zeros(max_steps, dtype=np.float32)
+    cumulative_counts = np.zeros(max_phenotype + 1, dtype=np.int32)
+    last_idx = 0
+    
+    for step in range(max_steps):
+        current_radius = step_size * (step + 1)
+        sq_radius = current_radius ** 2
+        current_idx = np.searchsorted(sorted_sq_dist, sq_radius, side='right')
+        new_pheno = sorted_pheno[last_idx:current_idx]
+        
+        counts = np.bincount(new_pheno, minlength=max_phenotype+1)
+        cumulative_counts += counts
+        last_idx = current_idx
+        
+        total = cumulative_counts.sum()
+        if total == 0:
+            results[step] = 0.0
+            continue
+            
+        proportions = cumulative_counts / total
+        sum_squares = np.sum(proportions ** 2)
+        results[step] = 1.0 - sum_squares  # Simpson Diversity Index
+        
+    return results.astype(np.float32)
+
+def process_centroid(cx, cy, cell_coords, phenotypes, indices, step_size, 
+                   max_steps, max_phenotype, metric):
+    """Metric dispatcher"""
+    if metric == "Shannon":
+        return process_shannon(cx, cy, cell_coords, phenotypes, indices, 
+                             step_size, max_steps, max_phenotype)
+    elif metric == "Simpson":
+        return process_simpson(cx, cy, cell_coords, phenotypes, indices,
+                             step_size, max_steps, max_phenotype)
+    elif metric == "Ripley_K":
+        return process_ripley(cx, cy, cell_coords, phenotypes, indices,
+                            step_size, max_steps, max_phenotype)
+    elif metric == "Phenotypic_Proportion":
+        return process_phenotypic_proportion(cx, cy, cell_coords, phenotypes,
+                                          indices, step_size, max_steps,
+                                          max_phenotype)
+    elif metric == "Spatial_Cooccurrence":
+        return process_cooccurrence(cx, cy, cell_coords, phenotypes, indices,
+                                  step_size, max_steps, max_phenotype)
+    else:
+        return np.empty(0, dtype=np.float32)
 
 # ========================================================================
-# SHARED MEMORY WRAPPER
+# REMAINING CODE UNCHANGED FROM ORIGINAL
 # ========================================================================
+
+def flatten_cooccurrence(results, max_steps, max_phenotype):
+    """Convert 3D co-occurrence matrix to flat dictionary entries"""
+    pheno_pairs = list(combinations(range(max_phenotype + 1), 2))
+    output = {}
+    
+    for step in range(max_steps):
+        for p1, p2 in pheno_pairs:
+            key = f"step_{step+1}_pheno_{p1}_{p2}"
+            output[key] = results[step, p1, p2]
+            
+    return output
+
+def save_results(results, output_path):
+    """Handle different metric output formats"""
+    df = pd.DataFrame(results)
+    
+    if METRIC == "Spatial_Cooccurrence":
+        df = df.melt(id_vars=['sample', 'center_x', 'center_y'],
+                    var_name='measurement',
+                    value_name='value')
+        df[['step', 'pheno1', 'pheno2']] = df['measurement'].str.extract(
+            r'step_(\d+)_pheno_(\d+)_(\d+)')
+        df = df.drop(columns='measurement')
+    
+    elif METRIC == "Phenotypic_Proportion":  # New format handling
+        df = df.melt(id_vars=['sample', 'center_x', 'center_y'],
+                    var_name='measurement',
+                    value_name='proportion')
+        df[['step', 'phenotype']] = df['measurement'].str.extract(
+            r'step_(\d+)_pheno_(\d+)')
+        df = df.drop(columns='measurement')
+        df['phenotype'] = df['phenotype'].astype(int)
+        df['step'] = df['step'].astype(int)
+        df = df.sort_values(['center_x', 'center_y', 'step', 'phenotype'])
+    
+    df.to_csv(output_path, index=False)
 
 def process_wrapper(args):
     """Multiprocessing wrapper with metric support"""
@@ -182,10 +355,6 @@ def process_wrapper(args):
     
     return result
 
-# ========================================================================
-# MAIN FUNCTION
-# ========================================================================
-
 def main():
     start_total = time.perf_counter()
     
@@ -197,7 +366,7 @@ def main():
     print(f"Generating {NUM_POINTS} random points...")
     centroids = generate_random_points(sampling_area, NUM_POINTS)
     points_path = os.path.join(OUTPUT_DIR, POINTS_LAYER_FILE)
-    save_napari_points_layer(centroids, points_path)
+    pd.DataFrame(centroids, columns=['center_x', 'center_y']).to_csv(points_path, index=False)
 
     # Load cell data
     print("Loading and filtering cell data...")
@@ -206,7 +375,7 @@ def main():
     if len(sample_cells) == 0:
         raise ValueError(f"No cells found for sample {SAMPLE_NAME}")
     
-    cell_coords = sample_cells[['Y_centroid', 'X_centroid']].values.astype(np.float32)  # Note: Axis handling for .tif files
+    cell_coords = sample_cells[['Y_centroid', 'X_centroid']].values.astype(np.float32)
     phenotypes, _ = pd.factorize(sample_cells['phenotype_key'])
     phenotypes = phenotypes.astype(np.int32)
     max_phenotype = phenotypes.max()
@@ -249,11 +418,25 @@ def main():
                 'center_x': cx,
                 'center_y': cy
             }
-            if METRIC == "Shannon":
+        
+            # Modified condition to handle both diversity indices
+            if METRIC in ["Shannon", "Simpson"]:  # THIS IS THE CRUCIAL CHANGE
                 result_entry.update({f'step_{i+1}': val for i, val in enumerate(values)})
             elif METRIC == "Ripley_K":
                 result_entry.update({f'K_radius_{i+1}': val for i, val in enumerate(values)})
+            elif METRIC == "Phenotypic_Proportion":
+                for pheno in range(max_phenotype + 1):
+                    result_entry.update({
+                        f'step_{i+1}_pheno_{pheno}': val 
+                        for i, val in enumerate(values[:, pheno])
+                    })
+            elif METRIC == "Spatial_Cooccurrence":
+                cooc_dict = flatten_cooccurrence(values, MAX_STEPS, max_phenotype)
+                result_entry.update(cooc_dict)
+        
             results.append(result_entry)
+
+
 
     # Cleanup and output
     print("Cleaning up...")
@@ -264,7 +447,7 @@ def main():
     
     print("Saving results...")
     output_path = os.path.join(OUTPUT_DIR, f"{METRIC.lower()}_index_{SAMPLE_NAME}.csv")
-    pd.DataFrame(results).to_csv(output_path, index=False)
+    save_results(results, output_path)
     
     print(f"\nTotal execution time: {time.perf_counter() - start_total:.2f} seconds")
     print(f"Results saved in: {output_path}")

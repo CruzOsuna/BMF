@@ -102,3 +102,9 @@ bibtex
 
 Maintainer: Your Name | your.email@institution.edu
 Last Updated: {Month} {Year}
+
+
+
+Notes:
+- The phenotipyc proportion functionality need a loot of memory 
+-
