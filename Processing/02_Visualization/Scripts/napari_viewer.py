@@ -332,21 +332,15 @@ def close_all():
 def view_metadata(adata_path=Path(), image_name="", metadata_column=""):
     path = str(adata_path)
     
-    # Detect CellID column from raw data
-    cell_data_path = Path(path) / 'cells.csv'  # Adjust path if different
-    detected_cell_id = 'CellID'  # Default fallback
-    
-    if cell_data_path.exists():
-        try:
-            # Read just the header to check columns
-            df = pd.read_csv(cell_data_path, nrows=0)
-            # Find column name variations
-            for col in df.columns:
-                if col.lower().replace('_', '').replace('-', '') == 'cellid':
-                    detected_cell_id = col
-                    break
-        except Exception as e:
-            print(f"Error reading columns: {e}")
+    # Read the actual CSV file to detect column names
+    try:
+        df = pd.read_csv(path, nrows=0)
+        # Find case-insensitive match for CellID
+        cellid_variations = [col for col in df.columns if col.lower() == 'cellid']
+        detected_cell_id = cellid_variations[0] if cellid_variations else 'CellID'
+    except Exception as e:
+        print(f"Error reading columns: {e}")
+        detected_cell_id = 'CellID'  # Fallback
     
     # Load data with detected CellID column
     adata = sm.pp.mcmicro_to_scimap(
@@ -362,7 +356,7 @@ def view_metadata(adata_path=Path(), image_name="", metadata_column=""):
         output_dir=None
     )
     
-    # Rest of the processing remains the same
+    
     adata = adata[adata.obs['imageid'] == image_name]
     available_phenotypes = list(adata.obs[metadata_column].unique())
     
