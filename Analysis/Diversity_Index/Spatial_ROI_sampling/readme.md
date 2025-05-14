@@ -2,6 +2,45 @@
 
 A high-performance Python script for calculating spatial metrics (Shannon Index, Ripley K Function, Phenotypic Proportions, and Spatial Co-occurrence) in multiplex imaging datasets, optimized for large-scale biological analyses.
 
+Spatial Cell Analysis Toolkit
+This computational tool quantifies spatial heterogeneity and cellular diversity in tissue samples using spatially resolved single-cell data. It systematically analyzes biological patterns through an adaptive radial sampling approach:
+
+Flexible Sampling Design
+
+Generates statistically robust random sampling points across user-specified tissue regions (polygons/line buffers)
+
+Implements concentric circular sampling areas at each point, with:
+• User-configurable radial increments (step size: e.g., 10µm)
+• Customizable analysis range (max steps: e.g., 0-100µm in 10 steps)
+
+Multi-Metric Quantification
+Computes five complementary spatial statistics at each radial expansion:
+
+Diversity indices: Shannon (entropy), Simpson (dominance)
+
+Spatial patterns: Ripley K (clustering), Co-occurrence (cell-type interactions)
+
+Composition analysis: Phenotypic Proportions (cell-type frequencies)
+
+High-Throughput Architecture
+
+Optimized spatial indexing (KDTree) for rapid neighborhood queries
+
+Parallel processing with shared memory management for large datasets
+
+Numba-accelerated metric calculations for subcellular resolution
+
+Standardized Outputs
+
+CSV files with radial metrics linked to sampling coordinates
+
+Structured tables enabling:
+• Cross-sample comparisons
+• Spatial trend visualization (e.g., diversity vs. distance gradients)
+• Downstream statistical modeling
+
+Applications: Characterizes tumor microenvironments, immune cell organization, and developmental patterning through quantitative spatial metrics.
+
 ## Key Features
 - **Four spatial metrics** supported:
   - Shannon Diversity Index
@@ -108,3 +147,6 @@ Last Updated: {Month} {Year}
 Notes:
 - The phenotipyc proportion functionality need a loot of memory 
 -
+
+
+
