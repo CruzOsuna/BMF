@@ -1,27 +1,54 @@
 #!/bin/bash
 
-# CORRECT configuration with full paths
-IMAGE_DIR="/media/cruz/Mice/CycIF_mice_p53/2_Visualization/t-CycIF/images_illumination_corrected"
-MASK_DIR="/media/cruz/Mice/CycIF_mice_p53/3_Segmentation/Mask_Illumination-corrected"
-CHANNEL_NAMES="/media/cruz/Mice/CycIF_mice_p53/4_Quantification/Metadata/channels.csv"
-OUTPUT_DIR="/media/cruz/Mice/CycIF_mice_p53/4_Quantification/output"
+# Configuration paths
+IMAGE_DIR="/media/cruz/Spatial/t-CycIF_human_2024/2_Visualization/t-CycIF/Images_IC/"
+MASK_DIR="/media/cruz/Spatial/t-CycIF_human_2024/3_Segmentation/Mask_IC/"
+CHANNEL_NAMES="/media/cruz/Spatial/t-CycIF_human_2024/4_Quantification/Metadata/channels.csv"
+OUTPUT_DIR="/media/cruz/Spatial/t-CycIF_human_2024/8_Results/Datasets/0_Raw_data/IC"
 
-# Verify the existence of directories
-echo "Checking paths..."
-[ -d "$IMAGE_DIR" ] || { echo "ERROR: Image directory does not exist: $IMAGE_DIR"; exit 1; }
-[ -d "$MASK_DIR" ] || { echo "ERROR: Mask directory does not exist: $MASK_DIR"; exit 1; }
-[ -f "$CHANNEL_NAMES" ] || { echo "ERROR: Channel names file does not exist: $CHANNEL_NAMES"; exit 1; }
+# Output naming pattern (verify with your cli.py's output)
+OUTPUT_SUFFIX="_quantified.csv"  # Example: image.ome.tif → image_quantified.csv
 
-# Set up Python environment
+# Create output directory if missing
+mkdir -p "$OUTPUT_DIR" || { echo "ERROR: Failed to create output directory"; exit 1; }
+
+# Validate inputs
+[ -d "$IMAGE_DIR" ] || { echo "ERROR: Image directory missing: $IMAGE_DIR"; exit 1; }
+[ -d "$MASK_DIR" ] || { echo "ERROR: Mask directory missing: $MASK_DIR"; exit 1; }
+[ -f "$CHANNEL_NAMES" ] || { echo "ERROR: Channel names file missing: $CHANNEL_NAMES"; exit 1; }
+
+# Configure Python environment
 export PYTHONPATH="/home/cruz/Escritorio/BMF/Processing/04_Quantification/Scripts:$PYTHONPATH"
 
-# Process files
-find "$IMAGE_DIR" -name "*.ome.tif" | parallel -j 8 --eta --bar --progress \
+# Process only images that meet:
+# 1. Corresponding mask exists
+# 2. Output CSV doesn't exist
+LOG_FILE="$OUTPUT_DIR/processing.log"
+echo "Processing started: $(date)" > "$LOG_FILE"
+
+find "$IMAGE_DIR" -name "*.ome.tif" | while read -r IMAGE; do
+    BASE_NAME=$(basename "$IMAGE" .ome.tif)
+    MASK="$MASK_DIR/$(basename "$IMAGE")"
+    OUTPUT_CSV="$OUTPUT_DIR/${BASE_NAME}${OUTPUT_SUFFIX}"
+    
+    # Check for mask existence
+    if [ ! -f "$MASK" ]; then
+        echo "WARNING: Missing mask for $IMAGE, skipping..." >> "$LOG_FILE"
+        continue
+    fi
+    
+    # Check for existing output
+    if [ -f "$OUTPUT_CSV" ]; then
+        echo "WARNING: Output exists for $IMAGE ($OUTPUT_CSV), skipping..." >> "$LOG_FILE"
+        continue
+    fi
+    
+    echo "$IMAGE"  # Pass valid images to parallel
+done | parallel -j 2 --eta --bar --progress \
 "python3 cli.py \
   --masks \"$MASK_DIR/{/}\" \
   --image \"{}\" \
   --channel_names \"$CHANNEL_NAMES\" \
-  --output \"$OUTPUT_DIR\""
+  --output \"$OUTPUT_DIR\" 2>> \"$LOG_FILE\""
 
-echo "Processing completed. Results in: $OUTPUT_DIR"
-
+echo "Processing complete. CSV files in: $OUTPUT_DIR"
