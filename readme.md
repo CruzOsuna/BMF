@@ -19,7 +19,7 @@
 ---
 
 ## Features
-### Core Modules
+### Processing Modules
 1. **Illumination Correction**  
    Docker-based BaSiC implementation for shading correction
 2. **Image Registration**  
@@ -30,6 +30,13 @@
    Nuclear/cell segmentation with TensorFlow backend
 5. **Quantification**  
    Parallelized intensity measurement and metadata handling
+
+
+### Analysis Modules
+1. **Diversity Indices**  
+   Spatial analysis of diversity indices and spatial parameters
+2. **STalign**  
+   t-CycIF cellular data alignment with H&E images
 
 ---
 
