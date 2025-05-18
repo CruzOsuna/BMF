@@ -70,11 +70,14 @@ Some sections of the code were adapted from the Färkkilä Lab and LSP repositor
 ### References
 1. **Illumination Correction**  
    Peng, T., Thorn, K., Schroeder, T., Wang, L., Theis, F. J., Marr, C., & Navab, N. (2017). A BaSiC tool for background and shading correction of optical microscopy images. Nature communications, 8(1), 14836.
-2. **Image Registration**  
+   
+3. **Image Registration**  
    Muhlich, J. L., Chen, Y. A., Yapp, C., Russell, D., Santagata, S., & Sorger, P. K. (2022). Stitching and registering highly multiplexed whole-slide images of tissues and tumors using ASHLAR. Bioinformatics, 38(19), 4613-4621.
-3. **Interactive Analysis**  
+   
+5. **Interactive Analysis**  
    Chiu, C. L., & Clack, N. (2022). Napari: a Python multi-dimensional image viewer platform for the research community. Microscopy and Microanalysis, 28(S1), 1576-1577.
-4. **Stardist Segmentation**  
+   
+7. **Stardist Segmentation**  
    Uwe Schmidt, Martin Weigert, Coleman Broaddus, and Gene Myers. Cell Detection with Star-convex Polygons. International Conference on Medical Image Computing and Computer-Assisted Intervention (MICCAI), Granada, Spain, September 2018.
    Martin Weigert, Uwe Schmidt, Robert Haase, Ko Sugawara, and Gene Myers.
    Star-convex Polyhedra for 3D Object Detection and Segmentation in Microscopy.
@@ -82,7 +85,8 @@ Some sections of the code were adapted from the Färkkilä Lab and LSP repositor
    Martin Weigert and Uwe Schmidt.
    Nuclei Instance Segmentation and Classification in Histopathology Images with Stardist.
    The IEEE International Symposium on Biomedical Imaging Challenges (ISBIC), Kolkata, India, March 2022.
-6. **Quantification**  
+
+9. **Quantification**  
    Schapiro, D., Sokolov, A., Yapp, C., Chen, Y. A., Muhlich, J. L., Hess, J., ... & Sorger, P. K. (2022). MCMICRO: a scalable, modular image-processing pipeline for multiplexed tissue imaging. Nature methods, 19(3), 311-315.
 
    
