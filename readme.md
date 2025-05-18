@@ -67,7 +67,7 @@ TBD - Pending final license selection
 ### Source Attribution
 Some sections of the code were adapted from the Färkkilä Lab and LSP repositories.
 
-### References
+## References
 1. **Illumination Correction**  
    Peng, T., Thorn, K., Schroeder, T., Wang, L., Theis, F. J., Marr, C., & Navab, N. (2017). A BaSiC tool for background and shading correction of optical microscopy images. Nature communications, 8(1), 14836.
    
