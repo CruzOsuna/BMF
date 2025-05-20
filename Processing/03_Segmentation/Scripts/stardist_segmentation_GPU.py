@@ -6,14 +6,30 @@ from stardist.models import StarDist2D
 from csbdeep.utils import normalize
 
 # Author: Cruz Osuna (cruzosuna2003@gmail.com)
-
+# Last update: 13/05/2025
 
 # ======== Configuration ========
 INPUT_PATH = "/media/cruz/Spatial/t-CycIF_human_2025/02_Visualization/t-CycIF/Images_IC/"
 OUTPUT_PATH = "/media/cruz/Spatial/t-CycIF_human_2025/03_Segmentation/Mask/"
-MODEL_NAME = '2D_versatile_fluo'
-TILE_SIZE = 256  # Optimal for not high end GPUs, adjust if needed
+TILE_SIZE = 256  # Optimal for not high end GPUs (8-15 GB of VRAM), adjust if needed
 # ===============================
+
+def get_model_choice():
+    """Interactive model selection with validation"""
+    models = {
+        '1': '2D_versatile_fluo',
+        '2': '2D_versatile_he',
+        '3': '2D_paper_dsb2018'
+    }
+    while True:
+        print("\nSelect segmentation model:")
+        print("1) 2D_versatile_fluo (Fluorescence microscopy images)")
+        print("2) 2D_versatile_he (H&E stained histology)")
+        print("3) 2D_paper_dsb2018 (DSB 2018 challenge dataset)")
+        choice = input("Enter choice (1-3) [default=1]: ").strip() or '1'
+        if choice in models:
+            return models[choice]
+        print(f"Invalid choice '{choice}' - please select 1, 2, or 3")
 
 def get_threshold(prompt, default, min_val=0.0, max_val=1.0):
     while True:
@@ -31,6 +47,7 @@ def main():
     
     # ---------- Get User Parameters ----------
     print("\n=== Segmentation Parameters ===")
+    model_name = get_model_choice()
     prob_thresh = get_threshold("Probability threshold (0-1)", 0.50)
     overlap_thresh = get_threshold("Overlap threshold (0-1)", 0.30)
     
@@ -54,8 +71,8 @@ def main():
     os.makedirs(OUTPUT_PATH, exist_ok=True)
 
     # ---------- Model Initialization ----------
-    model = StarDist2D.from_pretrained(MODEL_NAME)
-    print(f"\nLoaded {MODEL_NAME} model with thresholds:")
+    model = StarDist2D.from_pretrained(model_name)
+    print(f"\nLoaded {model_name} model with thresholds:")
     print(f" - Probability: {prob_thresh:.2f}")
     print(f" - Overlap: {overlap_thresh:.2f}")
 
