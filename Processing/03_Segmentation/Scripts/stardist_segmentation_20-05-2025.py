@@ -93,7 +93,8 @@ def main():
             # ---------- Dynamic Tiling ----------
             n_tiles = (
                 math.ceil(img.shape[0] / TILE_SIZE),
-                math.ceil(img.shape[1] / TILE_SIZE)
+                math.ceil(img.shape[1] / TILE_SIZE),
+                1  # Channel dimension (required for 3D input)
             )
             print(f"Using tile grid: {n_tiles}")
 

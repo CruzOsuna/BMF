@@ -6,6 +6,10 @@
 
 ---
 
+
+Support verified on Ubuntu 24.04.2 LTS and Windows 11 (tested with version 23H2, build 22631.4890).
+
+
 ## Setting Up the Segmentation Environment
 
 ### 1. Installation Using a Conda `.yml` File
