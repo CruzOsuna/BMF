@@ -3,14 +3,19 @@
 [![Project Status: Active](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
 [![License](https://img.shields.io/badge/License-TBD-blue)](LICENSE)
 
+> A modular and scalable pipeline for processing and analyzing t-CycIF multiplexed microscopy images, integrating illumination correction, registration, segmentation, and spatial analysis.
 
 ![Pipeline Overview](https://github.com/CruzOsuna/BMF/blob/main/workflow.png)
 
 ---
 
 ## Table of Contents
+
 - [Features](#features)
+  - [Processing Modules](#processing-modules)
+  - [Analysis Modules](#analysis-modules)
 - [Installation](#installation)
+  - [Prerequisites](#prerequisites)
 - [Contributing](#contributing)
 - [License](#license)
 - [Contact](#contact)
@@ -19,86 +24,91 @@
 ---
 
 ## Features
+
 ### Processing Modules
 1. **Illumination Correction**  
-   Docker-based BaSiC implementation for shading correction
+   Dockerized BaSiC implementation for robust shading and background correction.
 2. **Image Registration**  
-   Multi-cycle alignment with Ashlar workflow
+   Accurate multi-cycle alignment using the Ashlar workflow.
 3. **Interactive Analysis**  
-   Napari Viewer with widgets
+   Napari viewer integration with custom widgets for visualization and annotation.
 4. **Stardist Segmentation**  
-   Nuclear/cell segmentation with TensorFlow backend
+   Deep learning-based nuclear/cell segmentation powered by a TensorFlow backend.
 5. **Quantification**  
-   Parallelized intensity measurement and metadata handling
-
+   Fast, parallelized feature quantification with integrated metadata handling.
 
 ### Analysis Modules
 1. **Diversity Indices**  
-   Spatial analysis of diversity indices and spatial parameters
+   Computes spatial diversity indices and microenvironment statistics.
 2. **STalign**  
-   t-CycIF cellular data alignment with H&E images
+   Aligns t-CycIF cellular data with H&E histopathology images for multimodal integration.
 
 ---
 
 ## Installation
+
 ### Prerequisites
 - [Docker](https://docs.docker.com/get-docker/)
-- [Conda/Miniconda](https://docs.conda.io/en/latest/miniconda.html)
-- Linux (recommended)
+- [Conda / Miniconda](https://docs.conda.io/en/latest/miniconda.html)
+- Linux OS (Ubuntu 24.04.2 LTS recommended)
 
-Verified support for Ubuntu 24.04.2 LTS, Windows support has not been verified for all scripts.
+> ⚠️ Windows support is currently experimental and not fully tested.
 
-
+---
 
 ## Contributing
-This project welcomes contributions! Key needs:
-- Documentation improvements
-- Unit tests
-- Docker optimization
-- Additional visualization tools
 
-1. Fork the repository
-2. Create a feature branch
-3. Submit a pull request
+We welcome contributions from the community! You can help us by:
+- Enhancing documentation
+- Adding unit tests
+- Optimizing Docker builds
+- Developing additional visualization modules
 
-See CONTRIBUTING.md (under development) for guidelines.
+### Getting Started:
+1. Fork this repository
+2. Create a new feature branch (`git checkout -b feature-name`)
+3. Commit your changes (`git commit -m 'Add feature'`)
+4. Push to your fork (`git push origin feature-name`)
+5. Open a Pull Request
+
+> See `CONTRIBUTING.md` (coming soon) for detailed contribution guidelines.
+
+---
 
 ## License
-TBD - Pending final license selection
+
+**TBD** — License to be finalized. Contributions will be subject to the final license.
+
+---
 
 ## Contact
-### Maintainers
-- Cruz Osuna
-- Pablo Siliceo Portugal
 
-### Source Attribution
-Some sections of the code were adapted from the Färkkilä Lab and LSP repositories.
+**Maintainers:**
+- **Cruz Osuna**
+- **Pablo Siliceo Portugal**
 
-## References
-1. **Illumination Correction**  
-   Peng, T., Thorn, K., Schroeder, T., Wang, L., Theis, F. J., Marr, C., & Navab, N. (2017). A BaSiC tool for background and shading correction of optical microscopy images. Nature communications, 8(1), 14836.
-   
-3. **Image Registration**  
-   Muhlich, J. L., Chen, Y. A., Yapp, C., Russell, D., Santagata, S., & Sorger, P. K. (2022). Stitching and registering highly multiplexed whole-slide images of tissues and tumors using ASHLAR. Bioinformatics, 38(19), 4613-4621.
-   
-5. **Interactive Analysis**  
-   Chiu, C. L., & Clack, N. (2022). Napari: a Python multi-dimensional image viewer platform for the research community. Microscopy and Microanalysis, 28(S1), 1576-1577.
-   
-7. **Stardist Segmentation**  
-   Uwe Schmidt, Martin Weigert, Coleman Broaddus, and Gene Myers. Cell Detection with Star-convex Polygons. International Conference on Medical Image Computing and Computer-Assisted Intervention (MICCAI), Granada, Spain, September 2018.
-   Martin Weigert, Uwe Schmidt, Robert Haase, Ko Sugawara, and Gene Myers.
-   
-   Star-convex Polyhedra for 3D Object Detection and Segmentation in Microscopy.
-   The IEEE Winter Conference on Applications of Computer Vision (WACV), Snowmass Village, Colorado, March 2020.
-   Martin Weigert and Uwe Schmidt.
-   
-   Nuclei Instance Segmentation and Classification in Histopathology Images with Stardist.
-   The IEEE International Symposium on Biomedical Imaging Challenges (ISBIC), Kolkata, India, March 2022.
+For questions, suggestions, or collaboration inquiries, please reach out via GitHub issues or pull requests.
 
-9. **Quantification**  
-   Schapiro, D., Sokolov, A., Yapp, C., Chen, Y. A., Muhlich, J. L., Hess, J., ... & Sorger, P. K. (2022). MCMICRO: a scalable, modular image-processing pipeline for multiplexed tissue imaging. Nature methods, 19(3), 311-315.
+**Source Attribution:**  
+Some code sections are adapted from the [Färkkilä Lab](https://github.com/farkkilalab) and [LSP](https://github.com/labsyspharm) repositories.
 
-   
+---
 
+## 📖 References
 
+### Illumination Correction
+- Peng, T. *et al.* (2017). A BaSiC tool for background and shading correction of optical microscopy images. *Nature Communications*, **8**, 14836.
 
+### Image Registration
+- Muhlich, J. L. *et al.* (2022). Stitching and registering highly multiplexed whole-slide images of tissues and tumors using ASHLAR. *Bioinformatics*, **38**(19), 4613–4621.
+
+### Interactive Analysis
+- Chiu, C. L. & Clack, N. (2022). Napari: a multi-dimensional image viewer for the research community. *Microscopy and Microanalysis*, **28**(S1), 1576–1577.
+
+### Stardist Segmentation
+- Schmidt, U. *et al.* (2018). Cell detection with star-convex polygons. *MICCAI*.
+- Weigert, M. *et al.* (2020). Star-convex polyhedra for 3D object detection. *WACV*.
+- Weigert, M. & Schmidt, U. (2022). Nuclei segmentation and classification in histopathology. *ISBIC*.
+
+### Quantification
+- Schapiro, D. *et al.* (2022). MCMICRO: a scalable, modular pipeline for multiplexed tissue imaging. *Nature Methods*, **19**(3), 311–315.
