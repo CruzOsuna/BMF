@@ -38,7 +38,7 @@ sudo docker run \
   -u $(id -u):$(id -g) \
   --mount type=bind,source="/media/cruz/Spatial",target=/mnt/external \
   --mount type=bind,source="/media/cruz/Spatial/t-CycIF_human_2025_2/01_Registration/RCPNL//",target=/data/input \
-  --mount type=bind,source="/media/cruz/Spatial/t-CycIF_human_2025_2/00_Illumination correction/IC_filesoutput",target=/data/output \
+  --mount type=bind,source="/media/cruz/Spatial/t-CycIF_human_2025_2/00_Illumination correction/IC_files",target=/data/output \
   --mount type=bind,source="$(pwd)",target=/scripts \
   mybasic-image /scripts/BaSiC_run.sh
 
