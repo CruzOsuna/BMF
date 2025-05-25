@@ -39,7 +39,7 @@ docker build -t mybasic-image .
 
 Specifies the file format to be processed in the “BaSiC_run.sh” script, as follows: “rcpnl” or ‘czi’. 
 (Only these two formats are supported).
-![Example]([https://github.com/CruzOsuna/BMF/blob/main/workflow.png](https://github.com/CruzOsuna/BMF_t-CyCIF/blob/main/Processing_Stable/00_Illumination_correction/file_format_example.png))
+![Example](https://github.com/CruzOsuna/BMF_t-CyCIF/blob/main/Processing_Stable/00_Illumination_correction/file_format_example.png)
 
 ### 1. Using an External Device
 Run the following command, replacing the placeholders with appropriate values:
