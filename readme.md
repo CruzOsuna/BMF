@@ -94,7 +94,7 @@ Some code sections are adapted from the [Färkkilä Lab](https://github.com/fark
 
 ---
 
-## 📖 References
+## References
 
 ### Illumination Correction
 - Peng, T. *et al.* (2017). A BaSiC tool for background and shading correction of optical microscopy images. *Nature Communications*, **8**, 14836.
