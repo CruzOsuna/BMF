@@ -13,9 +13,9 @@ from tqdm import tqdm
 
 
 # ----------------- Configuration (Update these paths) -----------------
-input_path = "/media/cruz/TOSHIBA EXT1/BMF/ENSAYO CycIF INCAN/01_Registration"
-output_path = "/media/cruz/TOSHIBA EXT1/BMF/ENSAYO CycIF INCAN/02_Visualization/Images"
-illumination_base = "/media/cruz/TOSHIBA EXT1/BMF/ENSAYO CycIF INCAN/00_Illumination_correction"
+input_path = "/media/cruz/Spatial/t-CycIF_human_2025_2/01_Registration/RCPNL/"
+output_path = "/media/cruz/Spatial/t-CycIF_human_2025_2/02_Visualization/t-CycIF/Images_IC/"
+illumination_base = "/media/cruz/Spatial/t-CycIF_human_2025_2/00_Illumination correction/IC_files"
 # -----------------------------------------------------------------------
 
 supported_formats = ('rcpnl', 'czi')
