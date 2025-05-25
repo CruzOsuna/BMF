@@ -25,17 +25,25 @@
 
 ## Features
 
-### Processing Modules
-1. **Illumination Correction**  
+### Processing Modules  
+1. **[Illumination Correction](https://github.com/CruzOsuna/BMF_t-CyCIF/tree/main/Processing_Stable/00_Illumination_correction)**  
    Dockerized BaSiC implementation for robust shading and background correction.
-2. **Image Registration**  
+
+2. **[Image Registration](https://github.com/CruzOsuna/BMF_t-CyCIF/tree/main/Processing_Stable/01_Registration)**  
    Accurate multi-cycle alignment using the Ashlar workflow.
-3. **Interactive Analysis**  
+
+3. **[Interactive Analysis](https://github.com/CruzOsuna/BMF_t-CyCIF/tree/main/Processing_Stable/02_Visualization)**  
    Napari viewer integration with custom widgets for visualization and annotation.
-4. **Stardist Segmentation**  
+
+4. **[Stardist Segmentation](https://github.com/CruzOsuna/BMF_t-CyCIF/tree/main/Processing_Stable/03_Segmentation)**  
    Deep learning-based nuclear/cell segmentation powered by a TensorFlow backend.
-5. **Quantification**  
+
+5. **[Quantification](https://github.com/CruzOsuna/BMF_t-CyCIF/tree/main/Processing_Stable/04_Quantification)**  
    Fast, parallelized feature quantification with integrated metadata handling.
+
+6. **[Quality Check](https://github.com/CruzOsuna/BMF_t-CyCIF/tree/main/Processing_Stable/05_Quality_check)**  
+   Summary metrics and visual inspection tools for ensuring reliable processing outputs.
+
 
 ### Analysis Modules
 1. **Diversity Indices**  
