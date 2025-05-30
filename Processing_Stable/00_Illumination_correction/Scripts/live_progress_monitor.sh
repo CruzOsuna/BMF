@@ -16,8 +16,8 @@ BOLD='\e[1m'
 SPINNER=('|' '/' '-' '\\')
 
 # Paths
-INPUT_HOST_DIR="/media/cruz/Spatial/CycIF_human_2024/1_Registration/RCPNLS/Done"
-OUTPUT_HOST_DIR="/media/cruz/Spatial/CycIF_human_2024/0_Illumination_correction/output"
+INPUT_HOST_DIR="/media/cruz/Mice/t-CycIF_mice_p53/1_Registration/RCPNLS/"
+OUTPUT_HOST_DIR="/media/cruz/Mice/t-CycIF_mice_p53/00_Illumination correction/Output"
 FILE_TYPE="rcpnl"
 
 # State Variables

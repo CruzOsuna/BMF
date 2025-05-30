@@ -1,0 +1,1 @@
+2025-05-27 20:28:16,290 - INFO - Log file created at: /home/cruz/Escritorio/BMF_t-CyCIF/Processing_Stable/01_Registration/Scripts/processing_log_20250527_202816.txt

@@ -1,11 +1,11 @@
 #!/bin/bash
 
-export _JAVA_OPTIONS="-Xms25g -Xmx25g" # RAM 
+export _JAVA_OPTIONS="-Xms25g -Xmx25g" # RAM
 
 # Define paths and file type
-MY_PATH="/data/input/"     # Do not modify this path, indicate the path in the “sudo docker run...” command. 
-OUTPUT_PATH="/data/output" # Do not modify this path, indicate the path in the “sudo docker run...” command. 
-FILE_TYPE="rcpnl"   # Enter here the file format to be processed, either “czi” or “rcpnl”.
+MY_PATH="/data/input/"     # Do not modify this path, indicate the path in the “sudo docker run...” command.
+OUTPUT_PATH="/data/output" # Do not modify this path, indicate the path in the “sudo docker run...” command.
+FILE_TYPE="rcpnl"           # Enter here the file format to be processed, either “czi” or “rcpnl”.
 
 # Function to execute the ImageJ command
 BaSiC_call() {
@@ -23,7 +23,7 @@ BaSiC_call() {
 get_file_list() {
     local folder="$1"
     local files=""
-    
+
     # Loop through the files and filter based on the file type
     for f in "$folder"/*; do
         if [[ "$f" == *$FILE_TYPE* ]]; then
@@ -40,7 +40,7 @@ echo "Source folder: $MY_PATH"
 # Process each immediate subdirectory under MY_PATH
 find "$MY_PATH" -mindepth 1 -maxdepth 1 -type d -print0 | sort -z | while IFS= read -r -d '' subdir; do
     echo "Processing subdirectory: $subdir"
-    
+
     # Get the list of files in this subdir (sorted)
     illumination_to_correct=$(get_file_list "$subdir")
     file_list=()
