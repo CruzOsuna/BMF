@@ -7,4 +7,4 @@ source /home/cruz/anaconda3/etc/profile.d/conda.sh
 conda activate napari-env
 
 # Run napari_viewer script
-python /home/cruz/Escritorio/BMF_t-CyCIF/Processing/02_Visualization/Scripts/napari_viewer.py
+python /home/cruz/Escritorio/BMF_t-CyCIF/Processing_Stable/02_Visualization/Scripts/napari_viewer.py
