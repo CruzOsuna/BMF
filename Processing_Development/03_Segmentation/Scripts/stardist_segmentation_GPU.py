@@ -3,34 +3,43 @@ import tifffile
 import os
 import time
 import numpy as np
-import gc  # Garbage collection module
-import psutil  # For memory monitoring
+import gc
+import psutil
+import platform  # Added to detect operating system
 from stardist.models import StarDist2D
 from csbdeep.utils import normalize
-import tensorflow as tf  # For session clearing
+import tensorflow as tf
 
 # Author: Cruz Osuna (cruzosuna2003@gmail.com)
-# Last update: 13/05/2025
+# Last update: 01/06/2025
 
 # ======== Configuration ========
-INPUT_PATH = "/media/cruz/Spatial/t-CycIF_human_2025/02_Visualization/t-CycIF/Images_IC/"
-OUTPUT_PATH = "/media/cruz/Spatial/t-CycIF_human_2025/03_Segmentation/Mask/"
-TILE_SIZE = 256  # Optimal for not high end GPUs (8-15 GB of VRAM), adjust if needed
+# Use raw strings for Windows paths or standard Linux paths
+if platform.system() == 'Windows':
+    # Windows paths (use either format)
+    INPUT_PATH = r"\\NAS_BMF_LAB\Projects\t-CycIF\t-CycIF_human_2025_2\02_Visualization\t-CycIF\Images_IC"
+    # INPUT_PATH = "Z:\\Projects\\t-CycIF\\t-CycIF_human_2025_2\\02_Visualization\\t-CycIF\\Images_IC"  # If mapped to drive
+else:
+    # Linux/Mac path
+    INPUT_PATH = "/NAS_BMF_LAB/Projects/t-CycIF/t-CycIF_human_2025_2/02_Visualization/t-CycIF/Images_IC"
+
+if platform.system() == 'Windows':
+    OUTPUT_PATH = r"\\NAS_BMF_LAB\Projects\t-CycIF\t-CycIF_human_2025_2\03_Segmentation\Mask"
+else:
+    OUTPUT_PATH = "/NAS_BMF_LAB/Projects/t-CycIF/t-CycIF_human_2025_2/03_Segmentation/Mask/"
+
+TILE_SIZE = 256
 # ===============================
 
 def clean_memory():
     """Comprehensive memory cleanup routine"""
-    # 1. Clear TensorFlow session and memory
     tf.keras.backend.clear_session()
     tf.compat.v1.reset_default_graph()
-    
-    # 2. Force garbage collection
     gc.collect()
-    
-    # 3. Monitor current memory usage
-    process = psutil.Process(os.getpid())
-    mem_info = process.memory_info()
-    print(f"Memory after cleanup: {mem_info.rss/1024**2:.1f} MB")
+    if 'psutil' in globals():
+        process = psutil.Process(os.getpid())
+        mem_info = process.memory_info()
+        print(f"Memory after cleanup: {mem_info.rss/1024**2:.1f} MB")
 
 def get_model_choice():
     """Interactive model selection with validation"""
@@ -63,6 +72,13 @@ def get_threshold(prompt, default, min_val=0.0, max_val=1.0):
 def main():
     start_time = time.time()
     
+    # Validate paths
+    print(f"\nUsing input path: {INPUT_PATH}")
+    print(f"Using output path: {OUTPUT_PATH}")
+    
+    if not os.path.exists(INPUT_PATH):
+        raise FileNotFoundError(f"Input path does not exist: {INPUT_PATH}")
+    
     # ---------- Get User Parameters ----------
     print("\n=== Segmentation Parameters ===")
     model_name = get_model_choice()
@@ -77,7 +93,6 @@ def main():
     if not image_files:
         raise FileNotFoundError(f"No TIFF files found in {INPUT_PATH}")
 
-    # Sort images by file size (smallest first)
     image_files.sort(key=lambda f: os.path.getsize(os.path.join(INPUT_PATH, f)))
     
     print(f"\nFound {len(image_files)} images to process (ordered by size):")
@@ -100,6 +115,7 @@ def main():
         try:
             # Initialize variables for cleanup
             img = img_normalized = labels = None
+            process = psutil.Process(os.getpid())
             
             image_id = os.path.splitext(image_file)[0]
             input_path = os.path.join(INPUT_PATH, image_file)
@@ -112,7 +128,6 @@ def main():
             print(f"Image shape: {img.shape}")
             
             # Monitor memory before processing
-            process = psutil.Process(os.getpid())
             mem_start = process.memory_info().rss
             print(f"Memory before processing: {mem_start/1024**2:.1f} MB")
 
@@ -120,12 +135,11 @@ def main():
             n_tiles = (
                 math.ceil(img.shape[0] / TILE_SIZE),
                 math.ceil(img.shape[1] / TILE_SIZE),
-                1  # Channel dimension (required for 3D input)
+                1  # Channel dimension
             )
             print(f"Using tile grid: {n_tiles}")
 
             # ---------- Processing ----------
-            # Normalize and add channel dimension
             img_normalized = normalize(img)[..., np.newaxis]
             
             labels, _ = model.predict_instances(
@@ -160,13 +174,14 @@ def main():
             print(f"Memory released: {(mem_start - mem_end)/1024**2:.1f} MB")
 
     # ---------- Final Cleanup & Report ----------
-    del model  # Delete model after processing all images
+    del model
     clean_memory()
     
     elapsed = time.time() - start_time
-    print(f"\nProcessing complete! Time: {elapsed:.2f} seconds")
+    print(f"\nProcessing complete! Time: {elapsed/60:.2f} minutes")
 
 if __name__ == '__main__':
+    print(f"Running on: {platform.system()}")
     if input("Start processing? [y/n] ").lower() == "y":
         main()
     else:
