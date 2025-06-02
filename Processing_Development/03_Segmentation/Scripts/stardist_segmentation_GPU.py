@@ -3,8 +3,11 @@ import tifffile
 import os
 import time
 import numpy as np
+import gc  # Garbage collection module
+import psutil  # For memory monitoring
 from stardist.models import StarDist2D
 from csbdeep.utils import normalize
+import tensorflow as tf  # For session clearing
 
 # Author: Cruz Osuna (cruzosuna2003@gmail.com)
 # Last update: 13/05/2025
@@ -14,6 +17,20 @@ INPUT_PATH = "/media/cruz/Spatial/t-CycIF_human_2025/02_Visualization/t-CycIF/Im
 OUTPUT_PATH = "/media/cruz/Spatial/t-CycIF_human_2025/03_Segmentation/Mask/"
 TILE_SIZE = 256  # Optimal for not high end GPUs (8-15 GB of VRAM), adjust if needed
 # ===============================
+
+def clean_memory():
+    """Comprehensive memory cleanup routine"""
+    # 1. Clear TensorFlow session and memory
+    tf.keras.backend.clear_session()
+    tf.compat.v1.reset_default_graph()
+    
+    # 2. Force garbage collection
+    gc.collect()
+    
+    # 3. Monitor current memory usage
+    process = psutil.Process(os.getpid())
+    mem_info = process.memory_info()
+    print(f"Memory after cleanup: {mem_info.rss/1024**2:.1f} MB")
 
 def get_model_choice():
     """Interactive model selection with validation"""
@@ -72,14 +89,18 @@ def main():
     os.makedirs(OUTPUT_PATH, exist_ok=True)
 
     # ---------- Model Initialization ----------
+    print(f"\nLoading {model_name} model...")
     model = StarDist2D.from_pretrained(model_name)
-    print(f"\nLoaded {model_name} model with thresholds:")
+    print(f"Model loaded with thresholds:")
     print(f" - Probability: {prob_thresh:.2f}")
     print(f" - Overlap: {overlap_thresh:.2f}")
 
     # ---------- Processing Loop ----------
     for image_file in image_files:
         try:
+            # Initialize variables for cleanup
+            img = img_normalized = labels = None
+            
             image_id = os.path.splitext(image_file)[0]
             input_path = os.path.join(INPUT_PATH, image_file)
             output_path = os.path.join(OUTPUT_PATH, f"{image_id}.ome.tif")
@@ -89,6 +110,11 @@ def main():
             # Load image and add channel dimension
             img = tifffile.imread(input_path, key=0)
             print(f"Image shape: {img.shape}")
+            
+            # Monitor memory before processing
+            process = psutil.Process(os.getpid())
+            mem_start = process.memory_info().rss
+            print(f"Memory before processing: {mem_start/1024**2:.1f} MB")
 
             # ---------- Dynamic Tiling ----------
             n_tiles = (
@@ -115,9 +141,28 @@ def main():
 
         except Exception as e:
             print(f"Error processing {image_file}: {str(e)}")
-            continue
+        finally:
+            # ---------- Memory Cleanup ----------
+            print("Performing memory cleanup...")
+            
+            # 1. Delete large objects
+            del img, img_normalized, labels
+            
+            # 2. Clear TensorFlow session
+            tf.keras.backend.clear_session()
+            
+            # 3. Force garbage collection
+            gc.collect()
+            
+            # 4. Verify memory release
+            mem_end = process.memory_info().rss
+            print(f"Memory after cleanup: {mem_end/1024**2:.1f} MB")
+            print(f"Memory released: {(mem_start - mem_end)/1024**2:.1f} MB")
 
-    # ---------- Final Report ----------
+    # ---------- Final Cleanup & Report ----------
+    del model  # Delete model after processing all images
+    clean_memory()
+    
     elapsed = time.time() - start_time
     print(f"\nProcessing complete! Time: {elapsed:.2f} seconds")
 
