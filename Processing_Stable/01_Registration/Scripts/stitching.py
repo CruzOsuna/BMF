@@ -10,8 +10,8 @@ import subprocess
 from tqdm import tqdm
 
 # ----------------- Configuration -----------------
-input_path = "/media/cruz/Spatial/t-CycIF_human_2025_2/01_Registration/RCPNL/"
-output_path = "/media/cruz/Spatial/t-CycIF_human_2025_2/02_Visualization/t-CycIF/Images_IC/"
+input_path = "/media/cruz/Spatial/t-CycIF_human_2025_2/01_Registration/RCPNL_100/"
+output_path = "/media/cruz/Spatial/t-CycIF_human_2025_2/02_Visualization/t-CycIF/Images_IC_100/"
 illumination_base = "/media/cruz/Spatial/t-CycIF_human_2025_2/00_Illumination correction/IC_files"
 # -------------------------------------------------
 
@@ -103,7 +103,7 @@ def process_subfolder(subfolder, output_root, illumination_root, force=False):
         cmd += [
             "-o", output_file,
             "--filter-sigma", "1",
-            "-m", "30"
+            "-m", "100"
         ]
 
         logging.info("\nCommand: " + " ".join(cmd))

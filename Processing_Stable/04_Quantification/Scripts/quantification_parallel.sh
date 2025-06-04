@@ -1,10 +1,10 @@
 #!/bin/bash
 
 # Configuration paths
-IMAGE_DIR="/media/cruz/Spatial/t-CycIF_human_2024/2_Visualization/t-CycIF/Images_IC/"
-MASK_DIR="/media/cruz/Spatial/t-CycIF_human_2024/3_Segmentation/Mask_IC/"
-CHANNEL_NAMES="/media/cruz/Spatial/t-CycIF_human_2024/4_Quantification/Metadata/channels.csv"
-OUTPUT_DIR="/media/cruz/Spatial/t-CycIF_human_2024/8_Results/Datasets/0_Raw_data/IC"
+IMAGE_DIR="\\NAS_BMF_LAB\Projects\t-CycIF\t-CycIF_human_2025\02_Visualization\t-CycIF\Images_IC"
+MASK_DIR="\\NAS_BMF_LAB\Projects\t-CycIF\t-CycIF_human_2025\03_Segmentation\Mask_IC"
+CHANNEL_NAMES="\\NAS_BMF_LAB\Projects\t-CycIF\t-CycIF_human_2025\04_Quantification\Metadata\channels.csv"
+OUTPUT_DIR="\\NAS_BMF_LAB\Projects\t-CycIF\t-CycIF_human_2025\08_Results\Datasets\00_Raw_data"
 
 # Output naming pattern (verify with your cli.py's output)
 OUTPUT_SUFFIX="_quantified.csv"  # Example: image.ome.tif → image_quantified.csv
