@@ -14,15 +14,17 @@
 ### 1. Create Conda Environment
 ```bash
 conda env create -f image_registration.yml
-
+```
 2. Activate Environment
-
+```bash
 conda activate image_registration
+```
 
 3. Verify Installation
 Ensure Ashlar is available in your PATH:
-
+```bash
 which ashlar
+```
 
 
 
