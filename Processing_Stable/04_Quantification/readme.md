@@ -18,6 +18,12 @@ Ensure you have Conda installed on your system. To create the environment, execu
 conda env create -f quantification.yml
 ```
 
+Then install parallel in your terminal
+```bash
+sudo apt-get install parallel
+```
+
+
 This command will set up the necessary Python environment with all required dependencies.
 
 ---
