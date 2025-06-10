@@ -7,7 +7,7 @@ dependencies:
   - napari
   - pyqt=5.15
   - pandas
-  - numpy
+  - numpy=1.26
   - tifffile
   - dask
   - dask-image
@@ -26,6 +26,7 @@ dependencies:
   - plotnine
   - seaborn
   - matplotlib
+  - dask-image
   - pip
   - pip:
     - opencv-python-headless
