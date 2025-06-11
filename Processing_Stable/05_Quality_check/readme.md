@@ -14,8 +14,11 @@ rm -f ~/miniconda3/miniconda.sh
 
 # Create the Cylinter enviroment
 
-`conda create -n cylinter -c conda-forge -c labsyspharm cylinter=0.0.50`
-
+```
+conda create -n cylinter -c conda-forge -c labsyspharm cylinter=0.0.50 napari=0.4.18 vispy=0.12.1 pydantic=1.10.14 lxml=5.2.1 -y
+conda activate cylinter
+pip install lxml_html_clean
+```
 
 
 # Running Cylinter
