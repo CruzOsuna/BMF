@@ -12,7 +12,6 @@ dependencies:
   - dask
   - dask-image
   - zarr
-  - scimap
   - magicgui
   - scipy
   - scikit-image
@@ -26,7 +25,6 @@ dependencies:
   - plotnine
   - seaborn
   - matplotlib
-  - dask-image
   - pip
   - pip:
     - opencv-python-headless
