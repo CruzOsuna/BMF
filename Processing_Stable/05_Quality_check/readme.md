@@ -37,7 +37,7 @@ pip install lxml_html_clean
 Pendientes de especificar paths...
 
 - Human-2024
-`cylinter /media/cruz-osuna/Mice/CycIF_mice_4NQO/5_QC/Cylinter/INPUT_DIR/cylinter_config.yml`
+`cylinter /media/cruzosuna/Spatial/t-CycIF_human_2024/5_QC/Cylinter/INPUT_DIR/cylinter_config.yml`
 
 - Human-2025
 `cylinter /media/cruz-osuna/Mice/CycIF_mice_4NQO/5_QC/Cylinter/INPUT_DIR/cylinter_config.yml`
