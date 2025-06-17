@@ -64,14 +64,14 @@ illumination_base = "/path/to/00_Illumination/IC_files"  # Correction profiles
 
 ### Basic Processing
 ```bash
-python ashlar_processing.py -c 8
+python stitching.py -c 8
 ```
 
 - `-c` / `--threads`: Number of parallel processes (default: 4)
 
 ### Force Reprocessing
 ```bash
-python ashlar_processing.py -c 8 -f
+python stitching.py -c 8 -f
 ```
 
 - `-f` / `--force`: Overwrite existing output files
