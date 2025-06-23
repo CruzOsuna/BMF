@@ -596,7 +596,7 @@ def load_points(points_path: Path):
             return
 
         # Extract coordinates and optional properties
-        points_data = points_df[['x', 'y']].values
+        points_data = points_df[['X_centroid', 'Y_centroid']].values
         properties = {
             'label': points_df['label'].tolist() if 'label' in points_df.columns else None
         }
@@ -664,6 +664,10 @@ pick_center_button.clicked.connect(on_pick_center_click)
     call_button='Create Circle',
     layout='vertical',
     cell_info_csv={"label": "Cell Data CSV", "mode": "r", "filter": "*.csv"},
+    sample_name={
+        'label': 'Sample Name',
+        'tooltip': 'Nombre de la muestra a filtrar (columna "Sample")'
+    },
     center_x_display={
         'visible': False,
         'min': -1e10,
@@ -690,6 +694,7 @@ pick_center_button.clicked.connect(on_pick_center_click)
 )
 def create_circle_for_n_cells(
     cell_info_csv: Path = None,
+    sample_name: str = "",
     center_x_display: float = 0.0,
     center_y_display: float = 0.0,
     center_x_physical: float = 0.0,
@@ -697,7 +702,7 @@ def create_circle_for_n_cells(
     shape_name: str = "ROI_Sample_#Circle",
     num_cells: int = 1000
 ):
-    """Create a circle containing exactly n cells from CSV data"""
+    """Create a circle containing exactly n cells from CSV data for a specific sample"""
     try:
         # Validate inputs
         if not cell_info_csv or not cell_info_csv.exists():
@@ -717,9 +722,19 @@ def create_circle_for_n_cells(
         df = pd.read_csv(cell_info_csv)
         
         # Verify required columns
-        required_columns = ['X_centroid', 'Y_centroid']
+        required_columns = ['X_centroid', 'Y_centroid', 'Sample']
         if not all(col in df.columns for col in required_columns):
             show_info(f"CSV must contain columns: {required_columns}")
+            return
+        
+        # Filter by sample name
+        if sample_name:
+            df = df[df['Sample'] == sample_name]
+            if df.empty:
+                show_info(f"No cells found for sample: {sample_name}")
+                return
+        else:
+            show_info("Please specify a sample name")
             return
 
         # Convert physical coordinates to display coordinates with axis swap
@@ -779,7 +794,7 @@ def create_circle_for_n_cells(
         )
 
         show_info(
-            f"Circle created at:\n"
+            f"Circle created for sample '{sample_name}' at:\n"
             f"Display X: {center_x_display:.1f}, Y: {center_y_display:.1f}\n"
             f"Mapped Cells: {target_num}/{num_cells}\n"
             f"Radius: {radius_display:.1f}px"
@@ -796,7 +811,6 @@ def create_circle_widget():
     layout.addWidget(create_circle_for_n_cells.native)
     layout.addWidget(pick_center_button)
     return container
-
 
 # -------------------------------------------------------------------------------
 # Widget implementations - Extract Cells in Shape
@@ -848,7 +862,7 @@ def extract_cells_in_shape(
 
         # Read and filter CSV
         df = pd.read_csv(cell_csv)
-        required_cols = {'X_centroid', 'Y_centroid', 'cellID', 'Sample'}
+        required_cols = {'X_centroid', 'Y_centroid', 'CellID', 'Sample'}
         if not required_cols.issubset(df.columns):
             missing = required_cols - set(df.columns)
             show_info(f"Missing columns in CSV: {', '.join(missing)}")
