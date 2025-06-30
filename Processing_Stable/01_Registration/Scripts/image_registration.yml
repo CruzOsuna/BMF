@@ -17,4 +17,4 @@ dependencies:
   - pip
   - tqdm
   - pip:
-    - ashlar
+    - ashlar=1.17
