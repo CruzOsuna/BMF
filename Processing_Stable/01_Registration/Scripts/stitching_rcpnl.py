@@ -7,9 +7,9 @@ from os.path import join, exists, basename, isfile
 import subprocess
 
 # ----------------- Configuration -----------------
-my_path = "/media/cruzosuna/Spatial/2024_2/RCPL/"
-output_path = "/media/cruzosuna/Spatial/2024_2/Images/"
-illumination_base = "/media/cruzosuna/Spatial/2024_2/IC/"
+my_path = "/media/cruz/Spatial/2025_2-2/01_Registration/rcpnl/"
+output_path = "/media/cruz/Spatial/2025_2-2/02_Visualization/"
+illumination_base = "/media/cruz/Spatial/2025_2-2/00_Illumination_Correction/"
 # ------------------------------------------------
 
 file_type = 'rcpnl'
@@ -96,8 +96,10 @@ if __name__ == '__main__':
     parser.add_argument('-c', '--threads', type=int, default=4)
     args = parser.parse_args()
 
-    subfolders = [f.path for f in os.scandir(my_path) if f.is_dir()]
-    os.makedirs(output_path, exist_ok=True)
+    subfolders = [
+        f.path for f in os.scandir(my_path)
+        if f.is_dir() and not f.name.startswith("._") and not f.name.startswith(".") # Filter folders whose names begin with ._ or . 
+    ]
 
     print(f"Found {len(subfolders)} samples to process")
     
