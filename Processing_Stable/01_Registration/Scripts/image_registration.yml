@@ -3,7 +3,7 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - python=3.12
+  - python=3.10  
   - numpy
   - scipy
   - matplotlib
@@ -17,4 +17,5 @@ dependencies:
   - pip
   - tqdm
   - pip:
-    - ashlar=1.17
+      - ashlar==1.17  
+
