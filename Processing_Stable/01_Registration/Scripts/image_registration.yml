@@ -3,12 +3,12 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - python=3.10  
-  - numpy>=1.24
+  - python=3.10
+  - numpy=1.23
   - scipy
   - matplotlib
   - networkx
-  - scikit-image>=0.21
+  - scikit-image=0.19
   - scikit-learn
   - tifffile<2025.2.18
   - zarr<3
@@ -17,5 +17,5 @@ dependencies:
   - pip
   - tqdm
   - pip:
-      - ashlar==1.17  
+      - ashlar==1.17
 
