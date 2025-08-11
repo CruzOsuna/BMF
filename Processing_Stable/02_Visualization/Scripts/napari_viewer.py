@@ -596,7 +596,7 @@ def load_points(points_path: Path):
             return
 
         # Extract coordinates and optional properties
-        points_data = points_df[['X_centroid', 'Y_centroid']].values
+        points_data = points_df[['x', 'y']].values
         properties = {
             'label': points_df['label'].tolist() if 'label' in points_df.columns else None
         }
@@ -664,10 +664,6 @@ pick_center_button.clicked.connect(on_pick_center_click)
     call_button='Create Circle',
     layout='vertical',
     cell_info_csv={"label": "Cell Data CSV", "mode": "r", "filter": "*.csv"},
-    sample_name={
-        'label': 'Sample Name',
-        'tooltip': 'Nombre de la muestra a filtrar (columna "Sample")'
-    },
     center_x_display={
         'visible': False,
         'min': -1e10,
@@ -694,7 +690,6 @@ pick_center_button.clicked.connect(on_pick_center_click)
 )
 def create_circle_for_n_cells(
     cell_info_csv: Path = None,
-    sample_name: str = "",
     center_x_display: float = 0.0,
     center_y_display: float = 0.0,
     center_x_physical: float = 0.0,
@@ -702,7 +697,7 @@ def create_circle_for_n_cells(
     shape_name: str = "ROI_Sample_#Circle",
     num_cells: int = 1000
 ):
-    """Create a circle containing exactly n cells from CSV data for a specific sample"""
+    """Create a circle containing exactly n cells from CSV data"""
     try:
         # Validate inputs
         if not cell_info_csv or not cell_info_csv.exists():
@@ -722,19 +717,9 @@ def create_circle_for_n_cells(
         df = pd.read_csv(cell_info_csv)
         
         # Verify required columns
-        required_columns = ['X_centroid', 'Y_centroid', 'Sample']
+        required_columns = ['X_centroid', 'Y_centroid']
         if not all(col in df.columns for col in required_columns):
             show_info(f"CSV must contain columns: {required_columns}")
-            return
-        
-        # Filter by sample name
-        if sample_name:
-            df = df[df['Sample'] == sample_name]
-            if df.empty:
-                show_info(f"No cells found for sample: {sample_name}")
-                return
-        else:
-            show_info("Please specify a sample name")
             return
 
         # Convert physical coordinates to display coordinates with axis swap
@@ -794,7 +779,7 @@ def create_circle_for_n_cells(
         )
 
         show_info(
-            f"Circle created for sample '{sample_name}' at:\n"
+            f"Circle created at:\n"
             f"Display X: {center_x_display:.1f}, Y: {center_y_display:.1f}\n"
             f"Mapped Cells: {target_num}/{num_cells}\n"
             f"Radius: {radius_display:.1f}px"
@@ -812,6 +797,7 @@ def create_circle_widget():
     layout.addWidget(pick_center_button)
     return container
 
+
 # -------------------------------------------------------------------------------
 # Widget implementations - Extract Cells in Shape
 # -------------------------------------------------------------------------------
@@ -823,44 +809,42 @@ def create_circle_widget():
     cell_csv={"label": "Cell Data CSV", "mode": "r", "filter": "*.csv"},
     shape_name={"label": "Shape Layer", "choices": lambda _: [layer.name for layer in viewer.layers if isinstance(layer, Shapes)]},
     image_layer={"label": "Image Layer", "choices": lambda _: [layer.name for layer in viewer.layers if isinstance(layer, Image)]},
-    output_dir={"label": "Output Directory", "mode": "d"},
-    output_name={"label": "Output Filename"}
+    output_mode={"label": "Output Mode", "choices": ["New CSV", "Add label to existing"]},
+    label_column={"label": "Label Column Name", "visible": False},
+    label_value={"label": "Label Value", "visible": False},
+    output_dir={"label": "Output Directory", "mode": "d", "visible": True},
+    output_name={"label": "Output Filename", "visible": True}
 )
 def extract_cells_in_shape(
     sample: str,
     cell_csv: Path,
     shape_name: str,
     image_layer: str,
-    output_dir: Path,
-    output_name: str
+    output_mode: str = "New CSV",  # Nuevo parámetro
+    label_column: str = "ROI_Label",  # Nuevo parámetro
+    label_value: str = "Selected",  # Nuevo parámetro
+    output_dir: Path = Path(),
+    output_name: str = ""
 ):
-    """Extract cell data within specified shape and save to new CSV"""
+    """Extract cell data within specified shape and either save to new CSV or add label to existing"""
     try:
-        # Validate inputs
+        # Validar entradas comunes
         if not cell_csv.exists():
             show_info("Cell CSV file not found")
             return
             
-        # Find layers
-        shape_layer = None
-        for layer in viewer.layers:
-            if layer.name == shape_name and isinstance(layer, Shapes):
-                shape_layer = layer
-                break
-        if not shape_layer:
+        # Encontrar capas
+        shape_layer = next((layer for layer in viewer.layers if layer.name == shape_name and isinstance(layer, Shapes)), None)
+        if shape_layer is None:
             show_info(f"Shape layer '{shape_name}' not found")
             return
 
-        img_layer = None
-        for layer in viewer.layers:
-            if layer.name == image_layer and isinstance(layer, Image):
-                img_layer = layer
-                break
-        if not img_layer:
+        img_layer = next((layer for layer in viewer.layers if layer.name == image_layer and isinstance(layer, Image)), None)
+        if img_layer is None:
             show_info(f"Image layer '{image_layer}' not found")
             return
 
-        # Read and filter CSV
+        # Leer CSV completo
         df = pd.read_csv(cell_csv)
         required_cols = {'X_centroid', 'Y_centroid', 'CellID', 'Sample'}
         if not required_cols.issubset(df.columns):
@@ -873,22 +857,21 @@ def extract_cells_in_shape(
             show_info(f"No cells found for sample: {sample}")
             return
 
-        # Get image dimensions and scale factors
+        # Obtener dimensiones y factores de escala
         if img_layer.multiscale:
             base_level = img_layer.data[0]
-            scale_factor = img_layer.scale[-2:]  # Get YX scale from base level
+            scale_factor = img_layer.scale[-2:]
             y_dim, x_dim = base_level.shape[-2:]
         else:
             scale_factor = img_layer.scale[-2:]
             y_dim, x_dim = img_layer.data.shape[-2:]
 
-        # Create mask from shape with proper scaling
+        # Crear máscara a partir de la forma
         mask = shape_layer.to_labels(labels_shape=(y_dim, x_dim))
 
-        # Check which cells are inside the shape with scale consideration
+        # Verificar qué celdas están dentro de la forma
         in_shape_mask = []
         for _, row in sample_df.iterrows():
-            # Convert physical coordinates to pixel coordinates
             x = int(row['X_centroid'] / scale_factor[1])
             y = int(row['Y_centroid'] / scale_factor[0])
             
@@ -904,13 +887,53 @@ def extract_cells_in_shape(
             show_info("No cells found within the specified shape")
             return
 
-        # Save results
-        output_path = output_dir / f"{output_name}.csv"
-        filtered_df.to_csv(output_path, index=False)
-        show_info(f"Saved {cell_count} cells from sample '{sample}' to:\n{output_path}")
+        # MODO 1: Exportar a nuevo CSV
+        if output_mode == "New CSV":
+            output_path = output_dir / f"{output_name}.csv"
+            filtered_df.to_csv(output_path, index=False)
+            show_info(f"Saved {cell_count} cells from sample '{sample}' to:\n{output_path}")
+        
+        # MODO 2: Añadir etiqueta al CSV existente
+        else:
+            # Validar parámetros de etiqueta
+            if not label_column:
+                show_info("Please specify a label column name")
+                return
+                
+            # Crear o actualizar columna
+            if label_column not in df.columns:
+                df[label_column] = ""  # Crear nueva columna vacía
+                
+            # Actualizar solo las celdas seleccionadas
+            selected_ids = set(filtered_df['CellID'])
+            mask = df['CellID'].isin(selected_ids) & (df['Sample'] == sample)
+            df.loc[mask, label_column] = label_value
+            
+            # Guardar resultados
+            if output_name:  # Guardar como nuevo archivo
+                output_path = output_dir / f"{output_name}.csv"
+                df.to_csv(output_path, index=False)
+                show_info(f"Added label to {cell_count} cells. Saved as:\n{output_path}")
+            else:  # Sobreescribir original
+                df.to_csv(cell_csv, index=False)
+                show_info(f"Added label to {cell_count} cells in original file")
 
     except Exception as e:
         show_info(f"Error: {str(e)}")
+
+# Conectar cambio de modo para mostrar/ocultar controles
+@extract_cells_in_shape.output_mode.changed.connect
+def on_output_mode_changed(output_mode: str):
+    if output_mode == "Add label to existing":
+        extract_cells_in_shape.label_column.show()
+        extract_cells_in_shape.label_value.show()
+    else:
+        extract_cells_in_shape.label_column.hide()
+        extract_cells_in_shape.label_value.hide()
+
+# Configurar visibilidad inicial
+extract_cells_in_shape.label_column.hide()
+extract_cells_in_shape.label_value.hide()
 
 
 
